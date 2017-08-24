@@ -24,8 +24,8 @@ else
                 while true
                 do
                         killall mysqld
-                        sleep 2
-                        [ $? != 0 ]&&break
+                        [ $? != 0 ] && break
+						sleep 2
                 done
                 startMysql
         fi

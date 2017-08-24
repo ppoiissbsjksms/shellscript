@@ -17,7 +17,7 @@ mysqld-listen.sh
 - 脚本说明: 监控mysql进程，当mysql死掉自动启动之
 - 系统支持: Linux
 
-### 下载安装:
+### 使用方法:
 ``` bash
 wget -N --no-check-certificate https://raw.githubusercontent.com/myxuchangbin/shellscript/master/mysqld-listen.sh && chmod +x mysqld-listen.sh
 

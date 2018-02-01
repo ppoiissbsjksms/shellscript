@@ -1,0 +1,16 @@
+[Unit]
+Description=Xmrig-Proxy
+After=syslog.target network.target
+
+[Service]
+LimitCORE=infinity
+LimitNOFILE=512000
+LimitNPROC=512000
+Type=forking
+ExecStart=/usr/bin/screen -Sdm xmrig-proxy /root/xmrig-proxy/build/xmrig-proxy -c /root/xmrig-proxy/build/config.json
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

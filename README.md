@@ -24,3 +24,8 @@ wget -N --no-check-certificate https://raw.githubusercontent.com/myxuchangbin/sh
 crontab -e
 */5 * * * *    mysqld-listen.sh    #每隔5分钟，执行一次mysqld-listen.sh脚本。
 ```
+xmrig-proxy
+======
+
+- 脚本说明: xmrig-proxy启动脚本，一键切换currency钱包
+- 系统支持: Ubuntu12+ CentOS6/7

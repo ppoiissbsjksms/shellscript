@@ -27,5 +27,6 @@ crontab -e
 xmrig-proxy
 ======
 
-- 脚本说明: xmrig-proxy启动脚本，一键切换currency钱包
-- 系统支持: Ubuntu12+ CentOS6/7
+- 脚本说明: xmrig-proxy启动脚本，一键切换coin钱包
+- 系统支持: Ubuntu12+ CentOS6+
+- 使用说明: 使用前请自行修改脚本中相关配置信息

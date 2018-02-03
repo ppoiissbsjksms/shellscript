@@ -106,63 +106,63 @@ is_64bit() {
 }
 
 install_cuda() {
-	lspci | grep -i nvidia
-	if [ $? -eq 0 ]; then
-		if [ ! -f /usr/local/cuda/bin/nvcc ]; then
-			yum install -y kernel-devel-$(uname -r) kernel-headers-$(uname -r) dkms gcc gcc-c++
-			# install Cuda 8.0+ https://developer.nvidia.com/cuda-downloads
-			if centosversion 6; then
-				rpm -ivh http://developer.download.nvidia.com/compute/cuda/repos/rhel6/x86_64/cuda-repo-rhel6-9.1.85-1.x86_64.rpm
-				yum clean all
-				yum install cuda -y
-			elif centosversion 7; then
-				rpm -ivh http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-repo-rhel7-9.1.85-1.x86_64.rpm
-				yum clean all
-				yum install cuda -y
-			fi
-			grep "/usr/local/cuda/bin" /etc/profile
-			if [ $? -ne 0 ]; then
-				echo -ne '\nexport PATH=$PATH:/usr/local/cuda/bin\n' >> /etc/profile
-				source /etc/profile
-			fi
-			nvcc -V
-			if [ $? -eq 0 ]; then
-				echo -e "[${green}Info${plain}] CUDA successfully installed, restart the computer to take effect."
-			else
-				echo -e "[${red}Error${plain}] CUDA installation failed."
-			fi
-			
-		else
-			echo -e "[${green}Info${plain}] CUDA already installed."
-		fi
-	else
-		echo -e "[${red}Error${plain}] Please confirm whether the machine is equipped with CUDA support GPU."
-	fi
+    lspci | grep -i nvidia
+    if [ $? -eq 0 ]; then
+        if [ ! -f /usr/local/cuda/bin/nvcc ]; then
+            yum install -y kernel-devel-$(uname -r) kernel-headers-$(uname -r) dkms gcc gcc-c++
+            # install Cuda 8.0+ https://developer.nvidia.com/cuda-downloads
+            if centosversion 6; then
+                rpm -ivh http://developer.download.nvidia.com/compute/cuda/repos/rhel6/x86_64/cuda-repo-rhel6-9.1.85-1.x86_64.rpm
+                yum clean all
+                yum install cuda -y
+            elif centosversion 7; then
+                rpm -ivh http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-repo-rhel7-9.1.85-1.x86_64.rpm
+                yum clean all
+                yum install cuda -y
+            fi
+            grep "/usr/local/cuda/bin" /etc/profile
+            if [ $? -ne 0 ]; then
+                echo -ne '\nexport PATH=$PATH:/usr/local/cuda/bin\n' >> /etc/profile
+                source /etc/profile
+            fi
+            nvcc -V
+            if [ $? -eq 0 ]; then
+                echo -e "[${green}Info${plain}] CUDA successfully installed, restart the computer to take effect."
+            else
+                echo -e "[${red}Error${plain}] CUDA installation failed."
+            fi
+            
+        else
+            echo -e "[${green}Info${plain}] CUDA already installed."
+        fi
+    else
+        echo -e "[${red}Error${plain}] Please confirm whether the machine is equipped with CUDA support GPU."
+    fi
 }
 
 install_amd_app_sdk() {
-	lspci | grep -i amd
-	if [ $? -eq 0 ]; then
-		if [ ! -e /opt/AMDAPPSDK-3.0 ]; then
-			# install AMD APP SDK 3.0 http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/
-			clear
-			echo -e "[${green}Info${plain}] AMD APP SDK installation requires you to manually confirm some information, do not go away."
-			sleep 15
-			if is_64bit; then
-				wget http://xuchangbin-10064044.file.myqcloud.com/download/amd-app-sdk/AMD-APP-SDKInstaller-v3.0.130.136-GA-linux64.tar.bz2
-				tar xvf AMD-APP-SDKInstaller-v3.0.130.136-GA-linux64.tar.bz2
-				./AMD-APP-SDK-v3.0.130.136-GA-linux64.sh
-			else
-				wget http://xuchangbin-10064044.file.myqcloud.com/download/amd-app-sdk/AMD-APP-SDKInstaller-v3.0.130.136-GA-linux32.tar.bz2
-				tar xvf AMD-APP-SDKInstaller-v3.0.130.136-GA-linux32.tar.bz2
-				./AMD-APP-SDK-v3.0.130.136-GA-linux32.sh
-			fi
-		else
-			echo -e "[${green}Info${plain}] AMD APP SDK already installed."
-		fi
-	else
-		echo -e "[${red}Error${plain}] Please confirm whether the machine is equipped with AMD APP SDK support GPU."
-	fi
+    lspci | grep -i amd
+    if [ $? -eq 0 ]; then
+        if [ ! -e /opt/AMDAPPSDK-3.0 ]; then
+            # install AMD APP SDK 3.0 http://developer.amd.com/amd-accelerated-parallel-processing-app-sdk/
+            clear
+            echo -e "[${green}Info${plain}] AMD APP SDK installation requires you to manually confirm some information, do not go away."
+            sleep 15
+            if is_64bit; then
+                wget http://xuchangbin-10064044.file.myqcloud.com/download/amd-app-sdk/AMD-APP-SDKInstaller-v3.0.130.136-GA-linux64.tar.bz2
+                tar xvf AMD-APP-SDKInstaller-v3.0.130.136-GA-linux64.tar.bz2
+                ./AMD-APP-SDK-v3.0.130.136-GA-linux64.sh
+            else
+                wget http://xuchangbin-10064044.file.myqcloud.com/download/amd-app-sdk/AMD-APP-SDKInstaller-v3.0.130.136-GA-linux32.tar.bz2
+                tar xvf AMD-APP-SDKInstaller-v3.0.130.136-GA-linux32.tar.bz2
+                ./AMD-APP-SDK-v3.0.130.136-GA-linux32.sh
+            fi
+        else
+            echo -e "[${green}Info${plain}] AMD APP SDK already installed."
+        fi
+    else
+        echo -e "[${red}Error${plain}] Please confirm whether the machine is equipped with AMD APP SDK support GPU."
+    fi
 }
 
 install_check() {
@@ -255,8 +255,8 @@ fi
 #cmake3 .. -DOpenCL_ENABLE=OFF
 make install
 if [ $? -eq 0 ]; then
-	echo -e "[${green}Info${plain}] xmr-stak successfully installed, run: cd bin/ && ./xmr-stak"
+    echo -e "[${green}Info${plain}] xmr-stak successfully installed, run: cd bin/ && ./xmr-stak"
 else
-	rm -rf ./*
-	echo -e "[${red}Error${plain}] xmr-stak installation failed, Please try again"
+    rm -rf ./*
+    echo -e "[${red}Error${plain}] xmr-stak installation failed, Please try again"
 fi

@@ -20,7 +20,6 @@ mysqld-listen.sh
 ### 使用方法:
 ``` bash
 wget -N --no-check-certificate https://raw.githubusercontent.com/myxuchangbin/shellscript/master/mysqld-listen.sh && chmod +x mysqld-listen.sh
-
 crontab -e
 */5 * * * *    mysqld-listen.sh    #每隔5分钟，执行一次mysqld-listen.sh脚本。
 ```
@@ -35,6 +34,7 @@ xmrig-proxy
 ``` bash
 wget -N --no-check-certificate https://raw.githubusercontent.com/myxuchangbin/shellscript/master/xmrig-proxy/xmrig-proxy.sh && chmod +x xmrig-proxy.sh
 bash xmrig-proxy.sh
+```
 
 xmr-stak.sh
 ======
@@ -45,3 +45,4 @@ xmr-stak.sh
 ### 使用方法:
 ``` bash
 wget -N --no-check-certificate https://raw.githubusercontent.com/myxuchangbin/shellscript/master/xmr-stak.sh && chmod +x xmr-stak.sh && bash xmr-stak.sh
+```

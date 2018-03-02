@@ -46,3 +46,27 @@ xmr-stak.sh
 ``` bash
 wget -N --no-check-certificate https://raw.githubusercontent.com/myxuchangbin/shellscript/master/xmr-stak.sh && chmod +x xmr-stak.sh && bash xmr-stak.sh
 ```
+
+xmrig-proxy.patch
+======
+
+- 脚本说明: XMRig Proxy without donate
+- 系统支持: centos6+
+
+### 使用方法:
+
+sudo yum install -y patch git cmake cmake3 gcc gcc-c++ libuv-static libstdc++-static libuuid-devel libmicrohttpd-devel
+
+git clone https://github.com/xmrig/xmrig-proxy.git
+
+wget -N --no-check-certificate https://raw.githubusercontent.com/myxuchangbin/shellscript/master/xmrig-proxy.patch
+
+patch -p0 < xmrig-proxy.patch
+
+cd xmrig-proxy && mkdir build && cd build
+
+cmake3 .. && make
+
+rm -rf CM* && rm -rf Makefile && rm -rf cmake_install.cmake
+
+cp ../src/config.json ./

@@ -255,7 +255,7 @@ fi
 #cmake3 .. -DOpenCL_ENABLE=OFF
 make install
 if [ $? -eq 0 ]; then
-    echo -e "[${green}Info${plain}] xmr-stak successfully installed, run: cd bin/ && ./xmr-stak"
+    echo -e "[${green}Info${plain}] xmr-stak successfully installed, Run: cd xmr-stak/build/bin/ ; ./xmr-stak"
 else
     rm -rf ./*
     echo -e "[${red}Error${plain}] xmr-stak installation failed, Please try again"

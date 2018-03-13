@@ -204,6 +204,9 @@ if [ $? -ne 0 ]; then
 fi
 yum install centos-release-scl epel-release -y
 yum install hwloc-devel libmicrohttpd-devel openssl-devel make cmake cmake3 devtoolset-4-gcc* git screen lrzsz bzip2 pciutils -y
+if [ -e "xmr-stak" ]; then
+    rm -rf xmr-stak
+fi
 git clone https://github.com/fireice-uk/xmr-stak.git
 mkdir xmr-stak/build && cd xmr-stak/build
 grep "2.0 / 100.0" ../xmrstak/donate-level.hpp

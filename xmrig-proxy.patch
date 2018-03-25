@@ -677,7 +677,7 @@ diff -ruN xmrig-proxy/src/proxy/splitters/nicehash/NonceMapper.h xmrig-proxy_new
      IStrategy *m_strategy;
 diff -ruN xmrig-proxy/src/proxy/splitters/simple/SimpleMapper.cpp xmrig-proxy_new/src/proxy/splitters/simple/SimpleMapper.cpp
 --- xmrig-proxy/src/proxy/splitters/simple/SimpleMapper.cpp	2018-03-25 20:43:48.990371130 +0800
-+++ xmrig-proxy_new/src/proxy/splitters/simple/SimpleMapper.cpp	2018-03-25 21:18:57.103774496 +0800
++++ xmrig-proxy_new/src/proxy/splitters/simple/SimpleMapper.cpp	2018-03-25 21:56:49.470455097 +0800
 @@ -31,7 +31,6 @@
  #include "core/Controller.h"
  #include "log/Log.h"
@@ -732,6 +732,15 @@ diff -ruN xmrig-proxy/src/proxy/splitters/simple/SimpleMapper.cpp xmrig-proxy_ne
      setJob(job);
  }
  
+@@ -184,7 +174,7 @@
+ 
+ void SimpleMapper::onResultAccepted(IStrategy *strategy, Client *client, const SubmitResult &result, const char *error)
+ {
+-    AcceptEvent::start(m_id, m_miner, result, client->id() == -1, error);
++    AcceptEvent::start(m_id, m_miner, result, error);
+ 
+     if (!m_miner) {
+         return;
 @@ -234,9 +224,6 @@
  {
      m_strategy->connect();

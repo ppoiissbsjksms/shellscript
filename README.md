@@ -51,11 +51,11 @@ xmrig-proxy.patch
 ======
 
 - 脚本说明: XMRig Proxy without donate
-- 系统支持: centos6+
+- 版本支持: xmrig-proxy v2.5.0
 
 ### 使用方法:
 
-sudo yum install -y patch git cmake cmake3 gcc gcc-c++ libuv-static libstdc++-static libuuid-devel libmicrohttpd-devel
+yum install -y patch git cmake cmake3 gcc gcc-c++ libuv-static libstdc++-static libuuid-devel libmicrohttpd-devel
 
 git clone https://github.com/xmrig/xmrig-proxy.git
 

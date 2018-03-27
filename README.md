@@ -51,7 +51,7 @@ xmrig-proxy.patch
 ======
 
 - 脚本说明: XMRig Proxy without donate
-- 版本支持: xmrig-proxy v2.5.0
+- 版本支持: xmrig-proxy v2.5.2
 
 ### 使用方法:
 

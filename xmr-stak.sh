@@ -112,11 +112,11 @@ install_cuda() {
             yum install -y kernel-devel-$(uname -r) kernel-headers-$(uname -r) dkms gcc gcc-c++
             # install Cuda 8.0+ https://developer.nvidia.com/cuda-downloads
             if centosversion 6; then
-                rpm -ivh http://developer.download.nvidia.com/compute/cuda/repos/rhel6/x86_64/cuda-repo-rhel6-9.1.85-1.x86_64.rpm
+                rpm -ivh https://developer.download.nvidia.com/compute/cuda/repos/rhel6/x86_64/cuda-repo-rhel6-9.2.88-1.x86_64.rpm
                 yum clean all
                 yum install cuda -y
             elif centosversion 7; then
-                rpm -ivh http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-repo-rhel7-9.1.85-1.x86_64.rpm
+                rpm -ivh https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-repo-rhel7-9.2.88-1.x86_64.rpm
                 yum clean all
                 yum install cuda -y
             fi

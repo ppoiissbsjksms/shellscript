@@ -1,33 +1,32 @@
 diff -ruN xmrig-proxy/CMakeLists.txt xmrig-proxy_new/CMakeLists.txt
---- xmrig-proxy/CMakeLists.txt	2018-03-25 20:43:48.979370716 +0800
-+++ xmrig-proxy_new/CMakeLists.txt	2018-03-25 20:53:41.299662241 +0800
-@@ -18,7 +18,6 @@
-     src/core/ConfigLoader_static.h
-     src/core/ConfigWatcher.h
+--- xmrig-proxy/CMakeLists.txt	2018-06-30 11:02:17.862216824 +0800
++++ xmrig-proxy_new/CMakeLists.txt	2018-06-30 17:54:10.577904642 +0800
+@@ -42,14 +42,12 @@
+     src/core/Config.h
+     src/core/ConfigLoader_platform.h
      src/core/Controller.h
 -    src/donate.h
-     src/interfaces/IClientListener.h
-     src/interfaces/IConsoleListener.h
-     src/interfaces/IControllerListener.h
-@@ -37,7 +36,6 @@
-     src/net/Client.h
-     src/net/Id.h
-     src/net/Job.h
+     src/interfaces/IEvent.h
+     src/interfaces/IEventListener.h
+     src/interfaces/ISplitter.h
+     src/log/AccessLog.h
+     src/log/ShareLog.h
+     src/net/JobResult.h
 -    src/net/strategies/DonateStrategy.h
-     src/net/strategies/FailoverStrategy.h
-     src/net/strategies/SinglePoolStrategy.h
-     src/net/Url.h
-@@ -93,7 +91,6 @@
+     src/proxy/Addr.h
+     src/proxy/Counters.h
+     src/proxy/CustomDiff.h
+@@ -107,7 +105,6 @@
+     src/log/AccessLog.cpp
      src/log/ShareLog.cpp
-     src/net/Client.cpp
-     src/net/Job.cpp
+     src/net/JobResult.cpp
 -    src/net/strategies/DonateStrategy.cpp
-     src/net/strategies/FailoverStrategy.cpp
-     src/net/strategies/SinglePoolStrategy.cpp
-     src/net/SubmitResult.cpp
+     src/proxy/Counters.cpp
+     src/proxy/CustomDiff.cpp
+     src/proxy/Error.cpp
 diff -ruN xmrig-proxy/README.md xmrig-proxy_new/README.md
---- xmrig-proxy/README.md	2018-03-25 20:43:48.979370716 +0800
-+++ xmrig-proxy_new/README.md	2018-03-25 20:54:30.470512793 +0800
+--- xmrig-proxy/README.md	2018-06-30 11:02:17.862216824 +0800
++++ xmrig-proxy_new/README.md	2018-06-30 17:54:44.916874473 +0800
 @@ -46,7 +46,6 @@
        --no-color           disable colored output
        --no-workers         disable per worker statistics
@@ -36,7 +35,7 @@ diff -ruN xmrig-proxy/README.md xmrig-proxy_new/README.md
    -B, --background         run the miner in the background
    -c, --config=FILE        load a JSON-format configuration file
        --no-watch           disable configuration file watching
-@@ -62,12 +61,6 @@
+@@ -62,13 +61,6 @@
    -V, --version            output version information and exit
  ```
  
@@ -46,13 +45,14 @@ diff -ruN xmrig-proxy/README.md xmrig-proxy_new/README.md
 -
 -* XMR: `48edfHu7V9Z84YzzMa6fUueoELZ9ZRXq9VetWzYGzKt52XU5xvqgzYnDK9URnRoJMk1j8nLwEVsaSWJ4fhdUyZijBGUicoD`
 -* BTC: `1P7ujsXeX7GxQwHNnJsRMgAdNkFZmNVqJT`
- 
+-
  ## Release checksums
  ### SHA-256
+ ```
 diff -ruN xmrig-proxy/src/api/ApiRouter.cpp xmrig-proxy_new/src/api/ApiRouter.cpp
---- xmrig-proxy/src/api/ApiRouter.cpp	2018-03-25 20:43:48.985370942 +0800
-+++ xmrig-proxy_new/src/api/ApiRouter.cpp	2018-03-25 20:56:13.046373433 +0800
-@@ -212,14 +212,6 @@
+--- xmrig-proxy/src/api/ApiRouter.cpp	2018-06-30 11:02:17.867216823 +0800
++++ xmrig-proxy_new/src/api/ApiRouter.cpp	2018-06-30 17:56:00.732808508 +0800
+@@ -207,14 +207,6 @@
      doc.AddMember("mode",         rapidjson::StringRef(m_controller->config()->modeName()), allocator);
      doc.AddMember("ua",           rapidjson::StringRef(Platform::userAgent()), allocator);
      doc.AddMember("uptime",       stats.uptime(), allocator);
@@ -67,7 +67,7 @@ diff -ruN xmrig-proxy/src/api/ApiRouter.cpp xmrig-proxy_new/src/api/ApiRouter.cp
  }
  
  
-@@ -278,7 +270,6 @@
+@@ -273,7 +265,6 @@
      results.AddMember("avg_time",      stats.avgTime(), allocator);
      results.AddMember("latency",       stats.avgLatency(), allocator);
      results.AddMember("hashes_total",  stats.hashes, allocator);
@@ -75,9 +75,89 @@ diff -ruN xmrig-proxy/src/api/ApiRouter.cpp xmrig-proxy_new/src/api/ApiRouter.cp
  
      rapidjson::Value best(rapidjson::kArrayType);
      for (size_t i = 0; i < stats.topDiff.size(); ++i) {
+diff -ruN xmrig-proxy/src/common/config/CommonConfig.cpp xmrig-proxy_new/src/common/config/CommonConfig.cpp
+--- xmrig-proxy/src/common/config/CommonConfig.cpp	2018-06-30 11:02:17.867216823 +0800
++++ xmrig-proxy_new/src/common/config/CommonConfig.cpp	2018-06-30 18:19:27.794740267 +0800
+@@ -31,7 +31,6 @@
+ 
+ #include "common/config/CommonConfig.h"
+ #include "common/log/Log.h"
+-#include "donate.h"
+ #include "rapidjson/document.h"
+ #include "rapidjson/filewritestream.h"
+ #include "rapidjson/prettywriter.h"
+@@ -54,7 +53,6 @@
+ #   endif
+ 
+     m_apiPort(0),
+-    m_donateLevel(kDefaultDonateLevel),
+     m_printTime(60),
+     m_retries(5),
+     m_retryPause(5),
+@@ -274,17 +272,6 @@
+     case ApiRestrictedKey: /* --api-no-restricted */
+         return parseBoolean(key, false);
+ 
+-    case DonateLevelKey: /* --donate-level */
+-#       ifdef XMRIG_PROXY_PROJECT
+-        if (strncmp(arg, "minemonero.pro", 14) == 0) {
+-            m_donateLevel = 0;
+-            return true;
+-        }
+-#       endif
+-        return parseUint64(key, strtol(arg, nullptr, 10));
+-
+-    default:
+-        break;
+     }
+ 
+     return true;
+@@ -326,12 +313,6 @@
+         m_pools.back().algorithm().parseVariant(arg);
+         break;
+ 
+-    case DonateLevelKey: /* --donate-level */
+-        if (arg >= kMinimumDonateLevel && arg <= 99) {
+-            m_donateLevel = arg;
+-        }
+-        break;
+-
+     case ApiPort: /* --api-port */
+         if (arg > 0 && arg <= 65536) {
+             m_apiPort = arg;
+diff -ruN xmrig-proxy/src/common/config/CommonConfig.h xmrig-proxy_new/src/common/config/CommonConfig.h
+--- xmrig-proxy/src/common/config/CommonConfig.h	2018-06-30 11:02:17.867216823 +0800
++++ xmrig-proxy_new/src/common/config/CommonConfig.h	2018-06-30 18:20:13.514710624 +0800
+@@ -55,7 +55,6 @@
+     inline const char *userAgent() const           { return m_userAgent.data(); }
+     inline const std::vector<Pool> &pools() const  { return m_activePools; }
+     inline int apiPort() const                     { return m_apiPort; }
+-    inline int donateLevel() const                 { return m_donateLevel; }
+     inline int printTime() const                   { return m_printTime; }
+     inline int retries() const                     { return m_retries; }
+     inline int retryPause() const                  { return m_retryPause; }
+@@ -90,7 +89,6 @@
+     bool m_syslog;
+     bool m_watch;
+     int m_apiPort;
+-    int m_donateLevel;
+     int m_printTime;
+     int m_retries;
+     int m_retryPause;
+diff -ruN xmrig-proxy/src/common/interfaces/IConfig.h xmrig-proxy_new/src/common/interfaces/IConfig.h
+--- xmrig-proxy/src/common/interfaces/IConfig.h	2018-06-30 11:02:17.868216823 +0800
++++ xmrig-proxy_new/src/common/interfaces/IConfig.h	2018-06-30 18:21:31.539660337 +0800
+@@ -45,7 +45,6 @@
+         BackgroundKey     = 'B',
+         ColorKey          = 1002,
+         ConfigKey         = 'c',
+-        DonateLevelKey    = 1003,
+         HelpKey           = 'h',
+         KeepAliveKey      = 'k',
+         LogFileKey        = 'l',
 diff -ruN xmrig-proxy/src/config.json xmrig-proxy_new/src/config.json
---- xmrig-proxy/src/config.json	2018-03-25 20:43:48.985370942 +0800
-+++ xmrig-proxy_new/src/config.json	2018-03-25 20:56:35.765229625 +0800
+--- xmrig-proxy/src/config.json	2018-06-30 11:02:17.869216823 +0800
++++ xmrig-proxy_new/src/config.json	2018-06-30 17:56:16.338795036 +0800
 @@ -15,7 +15,6 @@
      ],
      "colors": true,
@@ -86,7 +166,7 @@ diff -ruN xmrig-proxy/src/config.json xmrig-proxy_new/src/config.json
      "log-file": null,
      "mode": "nicehash",
      "pools": [
-@@ -33,4 +32,4 @@
+@@ -35,4 +34,4 @@
      "verbose": false,
      "watch": true,
      "workers": true
@@ -94,89 +174,28 @@ diff -ruN xmrig-proxy/src/config.json xmrig-proxy_new/src/config.json
 \ No newline at end of file
 +}
 diff -ruN xmrig-proxy/src/core/Config.cpp xmrig-proxy_new/src/core/Config.cpp
---- xmrig-proxy/src/core/Config.cpp	2018-03-25 20:43:48.985370942 +0800
-+++ xmrig-proxy_new/src/core/Config.cpp	2018-03-25 21:15:49.452703926 +0800
-@@ -28,7 +28,6 @@
- 
+--- xmrig-proxy/src/core/Config.cpp	2018-06-30 11:02:17.869216823 +0800
++++ xmrig-proxy_new/src/core/Config.cpp	2018-06-30 17:57:40.194723278 +0800
+@@ -32,7 +32,6 @@
+ #include "common/xmrig.h"
  #include "core/Config.h"
- #include "core/ConfigLoader.h"
+ #include "core/ConfigCreator.h"
 -#include "donate.h"
- #include "log/Log.h"
- #include "net/Url.h"
- #include "proxy/Addr.h"
-@@ -79,7 +78,6 @@
-     m_userAgent(nullptr),
-     m_algorithm(CRYPTONIGHT),
-     m_apiPort(0),
--    m_donateLevel(kDonateLevel),
-     m_mode(NICEHASH_MODE),
-     m_retries(2),
-     m_retryPause(1),
-@@ -197,7 +195,6 @@
+ #include "rapidjson/document.h"
+ #include "rapidjson/filewritestream.h"
+ #include "rapidjson/prettywriter.h"
+@@ -102,7 +101,6 @@
      doc.AddMember("bind",         bind, allocator);
-     doc.AddMember("colors",       colors(), allocator);
+     doc.AddMember("colors",       isColors(), allocator);
      doc.AddMember("custom-diff",  diff(), allocator);
 -    doc.AddMember("donate-level", donateLevel(), allocator);
-     doc.AddMember("log-file",     logFile() ? rapidjson::Value(rapidjson::StringRef(logFile())).Move() : rapidjson::Value(rapidjson::kNullType).Move(), allocator);
-     doc.AddMember("mode",         rapidjson::StringRef(modeName()), allocator);
+     doc.AddMember("log-file",     logFile() ? Value(StringRef(logFile())).Move() : Value(kNullType).Move(), allocator);
+     doc.AddMember("mode",         StringRef(modeName()), allocator);
  
-diff -ruN xmrig-proxy/src/core/Config.h xmrig-proxy_new/src/core/Config.h
---- xmrig-proxy/src/core/Config.h	2018-03-25 20:43:48.985370942 +0800
-+++ xmrig-proxy_new/src/core/Config.h	2018-03-25 21:05:57.520399133 +0800
-@@ -101,7 +101,6 @@
-     inline const std::vector<Url*> &pools() const  { return m_pools; }
-     inline int algorithm() const                   { return m_algorithm; }
-     inline int apiPort() const                     { return m_apiPort; }
--    inline int donateLevel() const                 { return m_donateLevel; }
-     inline int mode() const                        { return m_mode; }
-     inline int retries() const                     { return m_retries; }
-     inline int retryPause() const                  { return m_retryPause; }
-@@ -137,7 +136,6 @@
-     char *m_userAgent;
-     int m_algorithm;
-     int m_apiPort;
--    int m_donateLevel;
-     int m_mode;
-     int m_retries;
-     int m_retryPause;
-diff -ruN xmrig-proxy/src/core/ConfigLoader.cpp xmrig-proxy_new/src/core/ConfigLoader.cpp
---- xmrig-proxy/src/core/ConfigLoader.cpp	2018-03-25 20:43:48.985370942 +0800
-+++ xmrig-proxy_new/src/core/ConfigLoader.cpp	2018-03-25 21:04:57.645142845 +0800
-@@ -327,15 +327,6 @@
-     case 4003: /* --api-no-ipv6 */
-         return parseBoolean(config, key, false);
- 
--    case 1003: /* --donate-level */
--        if (strncmp(arg, "minemonero.pro", 14) == 0) {
--            config->m_donateLevel = 0;
--        }
--        else {
--            parseArg(config, key, strtol(arg, nullptr, 10));
--        }
--        break;
--
-     case 1104: /* --coin */
-         config->setCoin(arg);
-         break;
-@@ -387,14 +378,6 @@
-         config->m_retryPause = (int) arg;
-         break;
- 
--    case 1003: /* --donate-level */
--        if ((int) arg < 0 || arg > 99) {
--            return true;
--        }
--
--        config->m_donateLevel = (int) arg;
--        break;
--
-     case 1010: /* --variant */
-         config->m_pools.back()->setVariant((int) arg);
-         break;
-diff -ruN xmrig-proxy/src/core/ConfigLoader_static.h xmrig-proxy_new/src/core/ConfigLoader_static.h
---- xmrig-proxy/src/core/ConfigLoader_static.h	2018-03-25 20:43:48.985370942 +0800
-+++ xmrig-proxy_new/src/core/ConfigLoader_static.h	2018-03-25 21:01:16.020791175 +0800
-@@ -63,7 +63,6 @@
+diff -ruN xmrig-proxy/src/core/ConfigLoader_platform.h xmrig-proxy_new/src/core/ConfigLoader_platform.h
+--- xmrig-proxy/src/core/ConfigLoader_platform.h	2018-06-30 11:02:17.869216823 +0800
++++ xmrig-proxy_new/src/core/ConfigLoader_platform.h	2018-06-30 18:00:37.665574800 +0800
+@@ -61,7 +61,6 @@
        --no-color           disable colored output\n\
        --no-workers         disable per worker statistics\n\
        --variant            algorithm PoW variant\n\
@@ -184,7 +203,34 @@ diff -ruN xmrig-proxy/src/core/ConfigLoader_static.h xmrig-proxy_new/src/core/Co
    -B, --background         run the miner in the background\n\
    -c, --config=FILE        load a JSON-format configuration file\n\
        --no-watch           disable configuration file watching\n\
-@@ -101,7 +100,6 @@
+@@ -99,7 +98,6 @@
+     { "config",            1, nullptr, xmrig::IConfig::ConfigKey         },
+     { "custom-diff",       1, nullptr, xmrig::IConfig::CustomDiffKey     },
+     { "debug",             0, nullptr, xmrig::IConfig::DebugKey          },
+-    { "donate-level",      1, nullptr, xmrig::IConfig::DonateLevelKey    },
+     { "help",              0, nullptr, xmrig::IConfig::HelpKey           },
+     { "keepalive",         2, nullptr, xmrig::IConfig::KeepAliveKey      },
+     { "log-file",          1, nullptr, xmrig::IConfig::LogFileKey        },
+@@ -133,7 +131,6 @@
+     { "colors",           0, nullptr, xmrig::IConfig::ColorKey          },
+     { "custom-diff",      1, nullptr, xmrig::IConfig::CustomDiffKey     },
+     { "debug",            0, nullptr, xmrig::IConfig::DebugKey          },
+-    { "donate-level",     1, nullptr, xmrig::IConfig::DonateLevelKey    },
+     { "log-file",         1, nullptr, xmrig::IConfig::LogFileKey        },
+     { "retries",          1, nullptr, xmrig::IConfig::RetriesKey        },
+     { "retry-pause",      1, nullptr, xmrig::IConfig::RetryPauseKey     },
+diff -ruN xmrig-proxy/src/core/ConfigLoader_static.h xmrig-proxy_new/src/core/ConfigLoader_static.h
+--- xmrig-proxy/src/core/ConfigLoader_static.h	2018-06-30 11:02:17.869216823 +0800
++++ xmrig-proxy_new/src/core/ConfigLoader_static.h	2018-06-30 18:00:20.559588917 +0800
+@@ -64,7 +64,6 @@
+       --no-color           disable colored output\n\
+       --no-workers         disable per worker statistics\n\
+       --variant            algorithm PoW variant\n\
+-      --donate-level=N     donate level, default 2%%\n\
+   -B, --background         run the miner in the background\n\
+   -c, --config=FILE        load a JSON-format configuration file\n\
+       --no-watch           disable configuration file watching\n\
+@@ -102,7 +101,6 @@
      { "config",            1, nullptr, 'c'  },
      { "custom-diff",       1, nullptr, 1102 },
      { "debug",             0, nullptr, 1101 },
@@ -192,7 +238,7 @@ diff -ruN xmrig-proxy/src/core/ConfigLoader_static.h xmrig-proxy_new/src/core/Co
      { "help",              0, nullptr, 'h'  },
      { "keepalive",         0, nullptr ,'k'  },
      { "log-file",          1, nullptr, 'l'  },
-@@ -134,7 +132,6 @@
+@@ -135,7 +133,6 @@
      { "colors",           0, nullptr, 2000 },
      { "custom-diff",      1, nullptr, 1102 },
      { "debug",            0, nullptr, 1101 },
@@ -201,17 +247,17 @@ diff -ruN xmrig-proxy/src/core/ConfigLoader_static.h xmrig-proxy_new/src/core/Co
      { "retries",          1, nullptr, 'r'  },
      { "retry-pause",      1, nullptr, 'R'  },
 diff -ruN xmrig-proxy/src/donate.h xmrig-proxy_new/src/donate.h
---- xmrig-proxy/src/donate.h	2018-03-25 20:43:48.986370980 +0800
+--- xmrig-proxy/src/donate.h	2018-06-30 11:02:17.869216823 +0800
 +++ xmrig-proxy_new/src/donate.h	1970-01-01 08:00:00.000000000 +0800
-@@ -1,47 +0,0 @@
+@@ -1,49 +0,0 @@
 -/* XMRig
 - * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
 - * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
 - * Copyright 2014      Lucas Jones <https://github.com/lucasjones>
 - * Copyright 2014-2016 Wolf9466    <https://github.com/OhGodAPet>
 - * Copyright 2016      Jay D Dee   <jayddee246@gmail.com>
-- * Copyright 2016-2017 XMRig       <support@xmrig.com>
-- *
+- * Copyright 2017-2018 XMR-Stak    <https://github.com/fireice-uk>, <https://github.com/psychocrypt>
+- * Copyright 2016-2018 XMRig       <https://github.com/xmrig>, <support@xmrig.com>
 - *
 - *   This program is free software: you can redistribute it and/or modify
 - *   it under the terms of the GNU General Public License as published by
@@ -247,13 +293,15 @@ diff -ruN xmrig-proxy/src/donate.h xmrig-proxy_new/src/donate.h
 - * Choice next donation time, with overime compensation. In proxy no way to use precise donation time.
 - * You can check actual donation via API.
 - */
--constexpr const int kDonateLevel = 2;
+-constexpr const int kDefaultDonateLevel = 2;
+-constexpr const int kMinimumDonateLevel = 0;
+-constexpr const uint64_t kFreeThreshold = 256;
 -
 -
 -#endif /* __DONATE_H__ */
 diff -ruN xmrig-proxy/src/log/ShareLog.cpp xmrig-proxy_new/src/log/ShareLog.cpp
---- xmrig-proxy/src/log/ShareLog.cpp	2018-03-25 20:43:48.987371017 +0800
-+++ xmrig-proxy_new/src/log/ShareLog.cpp	2018-03-25 20:57:44.773830289 +0800
+--- xmrig-proxy/src/log/ShareLog.cpp	2018-06-30 11:02:17.870216823 +0800
++++ xmrig-proxy_new/src/log/ShareLog.cpp	2018-06-30 18:01:53.578512655 +0800
 @@ -95,10 +95,6 @@
  
  void ShareLog::reject(const AcceptEvent *event)
@@ -266,9 +314,9 @@ diff -ruN xmrig-proxy/src/log/ShareLog.cpp xmrig-proxy_new/src/log/ShareLog.cpp
                          : "#%03u rejected (%" PRId64 "/%" PRId64 "+%" PRId64 ") diff %u ip %s \"%s\" (%" PRId64 " ms)",
               event->mapperId(), m_stats.data().accepted, m_stats.data().rejected, m_stats.data().invalid, event->result.diff, event->ip(), event->error(), event->result.elapsed);
 diff -ruN xmrig-proxy/src/net/strategies/DonateStrategy.cpp xmrig-proxy_new/src/net/strategies/DonateStrategy.cpp
---- xmrig-proxy/src/net/strategies/DonateStrategy.cpp	2018-03-25 20:43:48.987371017 +0800
+--- xmrig-proxy/src/net/strategies/DonateStrategy.cpp	2018-06-30 11:02:17.870216823 +0800
 +++ xmrig-proxy_new/src/net/strategies/DonateStrategy.cpp	1970-01-01 08:00:00.000000000 +0800
-@@ -1,170 +0,0 @@
+@@ -1,173 +0,0 @@
 -/* XMRig
 - * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
 - * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
@@ -293,31 +341,27 @@ diff -ruN xmrig-proxy/src/net/strategies/DonateStrategy.cpp xmrig-proxy_new/src/
 - */
 -
 -
+-#include "common/crypto/keccak.h"
+-#include "common/interfaces/IStrategyListener.h"
+-#include "common/net/Client.h"
+-#include "common/Platform.h"
+-#include "common/xmrig.h"
 -#include "core/Config.h"
 -#include "core/Controller.h"
--#include "interfaces/IStrategyListener.h"
--#include "net/Client.h"
+-#include "donate.h"
 -#include "net/strategies/DonateStrategy.h"
--#include "Platform.h"
+-#include "proxy/Counters.h"
 -#include "proxy/StatsData.h"
 -
 -
--extern "C"
--{
--#include "crypto/c_keccak.h"
+-static inline float randomf(float min, float max) {
+-    return (max - min) * ((((float) rand()) / (float) RAND_MAX)) + min;
 -}
 -
 -
--static inline int random(int min, int max){
--   return min + rand() / (RAND_MAX / (max - min + 1) + 1);
--}
--
--
--DonateStrategy::DonateStrategy(size_t id, xmrig::Controller *controller, IStrategyListener *listener) :
+-DonateStrategy::DonateStrategy(xmrig::Controller *controller, IStrategyListener *listener) :
 -    m_active(false),
--    m_suspended(false),
 -    m_listener(listener),
--    m_id(id),
 -    m_donateTicks(0),
 -    m_target(0),
 -    m_ticks(0),
@@ -325,20 +369,18 @@ diff -ruN xmrig-proxy/src/net/strategies/DonateStrategy.cpp xmrig-proxy_new/src/
 -{
 -    uint8_t hash[200];
 -    char userId[65] = { 0 };
--    const char *user = controller->config()->pools().front()->user();
+-    const char *user = controller->config()->pools().front().user();
 -
--    keccak(reinterpret_cast<const uint8_t *>(user), static_cast<int>(strlen(user)), hash, sizeof(hash));
+-    xmrig::keccak(reinterpret_cast<const uint8_t *>(user), strlen(user), hash);
 -    Job::toHex(hash, 32, userId);
 -
--    Url *url = new Url("proxy.fee.xmrig.com", controller->config()->algorithm() == xmrig::Config::CRYPTONIGHT_LITE ? 7777 : 4444, userId, nullptr);
--
 -    m_client = new Client(-1, Platform::userAgent(), this);
--    m_client->setUrl(url);
+-    m_client->setPool(Pool("proxy.fee.xmrig.com", 9999, userId, nullptr));
 -    m_client->setRetryPause(1000);
+-    m_client->setAlgo(controller->config()->algorithm());
+-    m_client->setQuiet(true);
 -
--    delete url;
--
--    m_target = random(3000, 9000);
+-    m_target = (100 - controller->config()->donateLevel()) * 60 * randomf(0.5, 1.5);
 -}
 -
 -
@@ -355,11 +397,25 @@ diff -ruN xmrig-proxy/src/net/strategies/DonateStrategy.cpp xmrig-proxy_new/src/
 -        return false;
 -    }
 -
--    m_target = m_ticks + (6000 * ((double) m_donateTicks / level));
+-    m_target = m_ticks + ((6000 - level) * ((double) m_donateTicks / level));
 -    m_active = false;
 -
 -    stop();
 -    return true;
+-}
+-
+-
+-void DonateStrategy::save(const Client *client, const Job &job)
+-{
+-    m_pending.job  = job;
+-    m_pending.host = client->host();
+-    m_pending.port = client->port();
+-}
+-
+-
+-void DonateStrategy::setAlgo(const xmrig::Algorithm &algorithm)
+-{
+-    m_client->setAlgo(algorithm);
 -}
 -
 -
@@ -371,13 +427,11 @@ diff -ruN xmrig-proxy/src/net/strategies/DonateStrategy.cpp xmrig-proxy_new/src/
 -
 -void DonateStrategy::connect()
 -{
--    m_suspended = false;
 -}
 -
 -
 -void DonateStrategy::stop()
 -{
--    m_suspended   = true;
 -    m_donateTicks = 0;
 -    m_client->disconnect();
 -}
@@ -387,18 +441,15 @@ diff -ruN xmrig-proxy/src/net/strategies/DonateStrategy.cpp xmrig-proxy_new/src/
 -{
 -    m_client->tick(now);
 -
--    if (m_suspended) {
--        return;
--    }
--
 -    m_ticks++;
 -
 -    if (m_ticks == m_target) {
--        if (m_id == 0 && m_controller->statsData().upstreams.active == 1) {
+-        if (kFreeThreshold > 0 && Counters::miners() < kFreeThreshold) {
 -            m_target += 600;
 -            return;
 -        }
 -
+-        m_pending.job.reset();
 -        m_client->connect();
 -    }
 -
@@ -440,9 +491,9 @@ diff -ruN xmrig-proxy/src/net/strategies/DonateStrategy.cpp xmrig-proxy_new/src/
 -    m_listener->onResultAccepted(this, client, result, error);
 -}
 diff -ruN xmrig-proxy/src/net/strategies/DonateStrategy.h xmrig-proxy_new/src/net/strategies/DonateStrategy.h
---- xmrig-proxy/src/net/strategies/DonateStrategy.h	2018-03-25 20:43:48.988371055 +0800
+--- xmrig-proxy/src/net/strategies/DonateStrategy.h	2018-06-30 11:02:17.870216823 +0800
 +++ xmrig-proxy_new/src/net/strategies/DonateStrategy.h	1970-01-01 08:00:00.000000000 +0800
-@@ -1,76 +0,0 @@
+@@ -1,89 +0,0 @@
 -/* XMRig
 - * Copyright 2010      Jeff Garzik <jgarzik@pobox.com>
 - * Copyright 2012-2014 pooler      <pooler@litecoinpool.org>
@@ -470,8 +521,9 @@ diff -ruN xmrig-proxy/src/net/strategies/DonateStrategy.h xmrig-proxy_new/src/ne
 -#define __DONATESTRATEGY_H__
 -
 -
--#include "interfaces/IClientListener.h"
--#include "interfaces/IStrategy.h"
+-#include "common/interfaces/IClientListener.h"
+-#include "common/interfaces/IStrategy.h"
+-#include "common/utils/c_str.h"
 -
 -
 -class Client;
@@ -487,13 +539,26 @@ diff -ruN xmrig-proxy/src/net/strategies/DonateStrategy.h xmrig-proxy_new/src/ne
 -class DonateStrategy : public IStrategy, public IClientListener
 -{
 -public:
--    DonateStrategy(size_t id, xmrig::Controller *controller, IStrategyListener *listener);
+-    struct Pending
+-    {
+-        Job job;
+-        xmrig::c_str host;
+-        int port;
+-    };
+-
+-
+-    DonateStrategy(xmrig::Controller *controller, IStrategyListener *listener);
 -    ~DonateStrategy();
 -
 -    bool reschedule();
+-    void save(const Client *client, const Job &job);
+-    void setAlgo(const xmrig::Algorithm &algorithm);
 -
--    inline bool isActive() const override  { return m_active; }
--    inline void resume() override          {}
+-    inline bool hasPendingJob() const     { return m_pending.job.isValid(); }
+-    inline const Pending &pending() const { return m_pending; }
+-
+-    inline bool isActive() const override { return m_active; }
+-    inline void resume() override         {}
 -
 -    int64_t submit(const JobResult &result) override;
 -    void connect() override;
@@ -508,10 +573,9 @@ diff -ruN xmrig-proxy/src/net/strategies/DonateStrategy.h xmrig-proxy_new/src/ne
 -
 -private:
 -    bool m_active;
--    bool m_suspended;
 -    Client *m_client;
 -    IStrategyListener *m_listener;
--    size_t m_id;
+-    Pending m_pending;
 -    uint64_t m_donateTicks;
 -    uint64_t m_target;
 -    uint64_t m_ticks;
@@ -520,8 +584,8 @@ diff -ruN xmrig-proxy/src/net/strategies/DonateStrategy.h xmrig-proxy_new/src/ne
 -
 -#endif /* __SINGLEPOOLSTRATEGY_H__ */
 diff -ruN xmrig-proxy/src/proxy/events/AcceptEvent.h xmrig-proxy_new/src/proxy/events/AcceptEvent.h
---- xmrig-proxy/src/proxy/events/AcceptEvent.h	2018-03-25 20:43:48.989371093 +0800
-+++ xmrig-proxy_new/src/proxy/events/AcceptEvent.h	2018-03-25 21:07:24.115662271 +0800
+--- xmrig-proxy/src/proxy/events/AcceptEvent.h	2018-06-30 11:02:17.871216823 +0800
++++ xmrig-proxy_new/src/proxy/events/AcceptEvent.h	2018-06-30 18:04:19.920395095 +0800
 @@ -35,33 +35,30 @@
  class AcceptEvent : public MinerEvent
  {
@@ -560,17 +624,17 @@ diff -ruN xmrig-proxy/src/proxy/events/AcceptEvent.h xmrig-proxy_new/src/proxy/e
      size_t m_mapperId;
  };
 diff -ruN xmrig-proxy/src/proxy/splitters/nicehash/NonceMapper.cpp xmrig-proxy_new/src/proxy/splitters/nicehash/NonceMapper.cpp
---- xmrig-proxy/src/proxy/splitters/nicehash/NonceMapper.cpp	2018-03-25 20:43:48.989371093 +0800
-+++ xmrig-proxy_new/src/proxy/splitters/nicehash/NonceMapper.cpp	2018-03-25 21:11:23.694690037 +0800
-@@ -31,7 +31,6 @@
+--- xmrig-proxy/src/proxy/splitters/nicehash/NonceMapper.cpp	2018-06-30 11:02:17.872216823 +0800
++++ xmrig-proxy_new/src/proxy/splitters/nicehash/NonceMapper.cpp	2018-06-30 18:51:51.473986023 +0800
+@@ -34,7 +34,6 @@
+ #include "core/Config.h"
  #include "core/Controller.h"
- #include "log/Log.h"
- #include "net/Client.h"
+ #include "net/JobResult.h"
 -#include "net/strategies/DonateStrategy.h"
- #include "net/strategies/FailoverStrategy.h"
- #include "net/strategies/SinglePoolStrategy.h"
- #include "net/Url.h"
-@@ -46,7 +45,6 @@
+ #include "proxy/Counters.h"
+ #include "proxy/Error.h"
+ #include "proxy/events/AcceptEvent.h"
+@@ -45,7 +44,6 @@
  
  
  NonceMapper::NonceMapper(size_t id, xmrig::Controller *controller) :
@@ -578,18 +642,17 @@ diff -ruN xmrig-proxy/src/proxy/splitters/nicehash/NonceMapper.cpp xmrig-proxy_n
      m_suspended(0),
      m_pending(nullptr),
      m_id(id),
-@@ -54,10 +52,6 @@
- {
+@@ -54,9 +52,6 @@
      m_storage  = new NonceStorage();
      m_strategy = createStrategy(controller->config()->pools());
--
+ 
 -    if (controller->config()->donateLevel() > 0) {
--        m_donate = new DonateStrategy(id, controller, this);
+-        m_donate = new DonateStrategy(controller, this);
 -    }
  }
  
  
-@@ -66,7 +60,6 @@
+@@ -65,7 +60,6 @@
      delete m_pending;
      delete m_strategy;
      delete m_storage;
@@ -597,7 +660,7 @@ diff -ruN xmrig-proxy/src/proxy/splitters/nicehash/NonceMapper.cpp xmrig-proxy_n
  }
  
  
-@@ -140,7 +133,7 @@
+@@ -143,7 +137,7 @@
      JobResult req = event->request;
      req.diff = m_storage->job().diff();
  
@@ -606,28 +669,38 @@ diff -ruN xmrig-proxy/src/proxy/splitters/nicehash/NonceMapper.cpp xmrig-proxy_n
  
      m_results[strategy->submit(req)] = SubmitCtx(req.id, event->miner()->id());
  }
-@@ -150,9 +143,6 @@
+@@ -153,14 +147,6 @@
  {
      m_strategy->tick(now);
  
 -    if (m_donate) {
 -        m_donate->tick(now);
+-
+-        if (m_donate->isActive() && m_donate->hasPendingJob() && m_donate->reschedule()) {
+-            const auto &pending = m_donate->pending();
+-            setJob(pending.host.data(), pending.port, pending.job);
+-        }
 -    }
  }
  
  
-@@ -197,10 +187,6 @@
-                  m_id, client->host(), client->port(), job.diff());
-     }
+@@ -200,15 +186,6 @@
  
--    if (m_donate && m_donate->isActive() && client->id() != -1 && !m_donate->reschedule()) {
--        return;
+ void NonceMapper::onJob(IStrategy *strategy, Client *client, const Job &job)
+ {
+-    if (m_donate) {
+-        if (m_donate->isActive() && client->id() != -1 && !m_donate->reschedule()) {
+-            m_donate->save(client, job);
+-            return;
+-        }
+-
+-        m_donate->setAlgo(job.algorithm());
 -    }
 -
-     m_storage->setJob(job);
+     setJob(client->host(), client->port(), job);
  }
  
-@@ -219,7 +205,7 @@
+@@ -227,7 +204,7 @@
  {
      const SubmitCtx ctx = submitCtx(result.seq);
  
@@ -636,39 +709,37 @@ diff -ruN xmrig-proxy/src/proxy/splitters/nicehash/NonceMapper.cpp xmrig-proxy_n
  
      if (!ctx.miner) {
          return;
-@@ -272,10 +258,6 @@
- {
+@@ -284,9 +261,6 @@
      m_suspended = 0;
      m_strategy->connect();
--
+ 
 -    if (m_donate) {
 -        m_donate->connect();
 -    }
  }
  
  
-@@ -285,8 +267,4 @@
-     m_storage->setActive(false);
+@@ -309,7 +283,4 @@
      m_storage->reset();
      m_strategy->stop();
--
+ 
 -    if (m_donate) {
 -        m_donate->stop();
 -    }
  }
 diff -ruN xmrig-proxy/src/proxy/splitters/nicehash/NonceMapper.h xmrig-proxy_new/src/proxy/splitters/nicehash/NonceMapper.h
---- xmrig-proxy/src/proxy/splitters/nicehash/NonceMapper.h	2018-03-25 20:43:48.989371093 +0800
-+++ xmrig-proxy_new/src/proxy/splitters/nicehash/NonceMapper.h	2018-03-25 21:12:45.467771324 +0800
-@@ -34,7 +34,6 @@
- #include "net/Job.h"
+--- xmrig-proxy/src/proxy/splitters/nicehash/NonceMapper.h	2018-06-30 11:02:17.872216823 +0800
++++ xmrig-proxy_new/src/proxy/splitters/nicehash/NonceMapper.h	2018-06-30 18:10:06.237128102 +0800
+@@ -35,7 +35,6 @@
+ #include "common/net/Pool.h"
  
  
 -class DonateStrategy;
  class IStrategy;
  class JobResult;
  class LoginRequest;
-@@ -97,7 +96,6 @@
-     void connect();
+@@ -99,7 +98,6 @@
+     void setJob(const char *host, int port, const Job &job);
      void suspend();
  
 -    DonateStrategy *m_donate;
@@ -676,17 +747,17 @@ diff -ruN xmrig-proxy/src/proxy/splitters/nicehash/NonceMapper.h xmrig-proxy_new
      IStrategy *m_pending;
      IStrategy *m_strategy;
 diff -ruN xmrig-proxy/src/proxy/splitters/simple/SimpleMapper.cpp xmrig-proxy_new/src/proxy/splitters/simple/SimpleMapper.cpp
---- xmrig-proxy/src/proxy/splitters/simple/SimpleMapper.cpp	2018-03-25 20:43:48.990371130 +0800
-+++ xmrig-proxy_new/src/proxy/splitters/simple/SimpleMapper.cpp	2018-03-25 21:56:49.470455097 +0800
-@@ -31,7 +31,6 @@
+--- xmrig-proxy/src/proxy/splitters/simple/SimpleMapper.cpp	2018-06-30 11:02:17.872216823 +0800
++++ xmrig-proxy_new/src/proxy/splitters/simple/SimpleMapper.cpp	2018-06-30 18:12:39.034015056 +0800
+@@ -34,7 +34,6 @@
+ #include "core/Config.h"
  #include "core/Controller.h"
- #include "log/Log.h"
- #include "net/Client.h"
+ #include "net/JobResult.h"
 -#include "net/strategies/DonateStrategy.h"
- #include "net/strategies/FailoverStrategy.h"
- #include "net/strategies/SinglePoolStrategy.h"
- #include "net/Url.h"
-@@ -46,7 +45,6 @@
+ #include "proxy/Counters.h"
+ #include "proxy/Error.h"
+ #include "proxy/events/AcceptEvent.h"
+@@ -45,7 +44,6 @@
  
  SimpleMapper::SimpleMapper(uint64_t id, xmrig::Controller *controller) :
      m_active(false),
@@ -694,7 +765,7 @@ diff -ruN xmrig-proxy/src/proxy/splitters/simple/SimpleMapper.cpp xmrig-proxy_ne
      m_pending(nullptr),
      m_miner(nullptr),
      m_id(id),
-@@ -65,7 +63,6 @@
+@@ -64,7 +62,6 @@
  {
      delete m_pending;
      delete m_strategy;
@@ -702,7 +773,18 @@ diff -ruN xmrig-proxy/src/proxy/splitters/simple/SimpleMapper.cpp xmrig-proxy_ne
  }
  
  
-@@ -115,7 +112,7 @@
+@@ -108,10 +105,6 @@
+     if (m_pending) {
+         m_pending->stop();
+     }
+-
+-    if (m_donate) {
+-        m_donate->stop();
+-    }
+ }
+ 
+ 
+@@ -132,7 +125,7 @@
      JobResult req = event->request;
      req.diff = m_job.diff();
  
@@ -711,18 +793,19 @@ diff -ruN xmrig-proxy/src/proxy/splitters/simple/SimpleMapper.cpp xmrig-proxy_ne
  
      if (strategy) {
          strategy->submit(req);
-@@ -131,9 +128,6 @@
+@@ -147,10 +140,6 @@
+     if (!m_miner) {
          m_idleTime++;
      }
- 
+-
 -    if (m_donate) {
 -        m_donate->tick(now);
 -    }
  }
  
  
-@@ -166,10 +160,6 @@
-                  m_id, client->host(), client->port(), job.diff());
+@@ -184,10 +173,6 @@
+                  m_id, client->host(), client->port(), job.diff(), job.algorithm().shortName());
      }
  
 -    if (m_donate && m_donate->isActive() && client->id() != -1 && !m_donate->reschedule()) {
@@ -732,7 +815,7 @@ diff -ruN xmrig-proxy/src/proxy/splitters/simple/SimpleMapper.cpp xmrig-proxy_ne
      setJob(job);
  }
  
-@@ -184,7 +174,7 @@
+@@ -202,7 +187,7 @@
  
  void SimpleMapper::onResultAccepted(IStrategy *strategy, Client *client, const SubmitResult &result, const char *error)
  {
@@ -741,7 +824,7 @@ diff -ruN xmrig-proxy/src/proxy/splitters/simple/SimpleMapper.cpp xmrig-proxy_ne
  
      if (!m_miner) {
          return;
-@@ -234,9 +224,6 @@
+@@ -255,9 +240,6 @@
  {
      m_strategy->connect();
  
@@ -752,17 +835,17 @@ diff -ruN xmrig-proxy/src/proxy/splitters/simple/SimpleMapper.cpp xmrig-proxy_ne
  
  
 diff -ruN xmrig-proxy/src/proxy/splitters/simple/SimpleMapper.h xmrig-proxy_new/src/proxy/splitters/simple/SimpleMapper.h
---- xmrig-proxy/src/proxy/splitters/simple/SimpleMapper.h	2018-03-25 20:43:48.990371130 +0800
-+++ xmrig-proxy_new/src/proxy/splitters/simple/SimpleMapper.h	2018-03-25 21:17:03.241484261 +0800
-@@ -34,7 +34,6 @@
- #include "net/Job.h"
+--- xmrig-proxy/src/proxy/splitters/simple/SimpleMapper.h	2018-06-30 11:02:17.872216823 +0800
++++ xmrig-proxy_new/src/proxy/splitters/simple/SimpleMapper.h	2018-06-30 18:13:37.648972432 +0800
+@@ -35,7 +35,6 @@
+ #include "common/net/Pool.h"
  
  
 -class DonateStrategy;
  class IStrategy;
  class JobResult;
  class LoginRequest;
-@@ -83,7 +82,6 @@
+@@ -85,7 +84,6 @@
  
      bool m_active;
      bool m_dirty;
@@ -771,8 +854,8 @@ diff -ruN xmrig-proxy/src/proxy/splitters/simple/SimpleMapper.h xmrig-proxy_new/
      IStrategy *m_strategy;
      Job m_job;
 diff -ruN xmrig-proxy/src/proxy/Stats.cpp xmrig-proxy_new/src/proxy/Stats.cpp
---- xmrig-proxy/src/proxy/Stats.cpp	2018-03-25 20:43:48.989371093 +0800
-+++ xmrig-proxy_new/src/proxy/Stats.cpp	2018-03-25 21:13:19.264044788 +0800
+--- xmrig-proxy/src/proxy/Stats.cpp	2018-06-30 11:02:17.871216823 +0800
++++ xmrig-proxy_new/src/proxy/Stats.cpp	2018-06-30 18:14:14.431947079 +0800
 @@ -113,10 +113,6 @@
      m_data.accepted++;
      m_data.hashes += event->result.diff;
@@ -795,8 +878,8 @@ diff -ruN xmrig-proxy/src/proxy/Stats.cpp xmrig-proxy_new/src/proxy/Stats.cpp
      m_data.rejected++;
  }
 diff -ruN xmrig-proxy/src/proxy/StatsData.h xmrig-proxy_new/src/proxy/StatsData.h
---- xmrig-proxy/src/proxy/StatsData.h	2018-03-25 20:43:48.989371093 +0800
-+++ xmrig-proxy_new/src/proxy/StatsData.h	2018-03-25 21:13:43.972975833 +0800
+--- xmrig-proxy/src/proxy/StatsData.h	2018-06-30 11:02:17.871216823 +0800
++++ xmrig-proxy_new/src/proxy/StatsData.h	2018-06-30 18:14:36.226932482 +0800
 @@ -40,7 +40,6 @@
      inline StatsData() :
          accepted(0),

@@ -51,7 +51,7 @@ xmrig-proxy.patch
 ======
 
 - 脚本说明: XMRig Proxy without donate
-- 版本支持: xmrig-proxy v2.5.2
+- 适用版本: xmrig-proxy v2.6.3
 
 ### 使用方法:
 
@@ -67,6 +67,6 @@ cd xmrig-proxy && mkdir build && cd build
 
 cmake3 .. && make
 
-rm -rf CM* && rm -rf Makefile && rm -rf cmake_install.cmake
+rm -rf CM* Makefile cmake_install.cmake
 
 cp ../src/config.json ./

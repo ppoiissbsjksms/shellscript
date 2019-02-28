@@ -63,7 +63,7 @@ cp ../src/config.json ./
 
 ## 解锁Netflix
 
-### 条件
+### 条件：
 - 可看Netflix的VPS
 - [sniproxy](https://github.com/dlundquist/sniproxy)
 - [dnsmasq](http://www.thekelleys.org.uk/dnsmasq/doc.html)
@@ -88,6 +88,7 @@ cp ../src/config.json ./
    firewall-cmd --permanent --add-rich-rule="rule family="ipv4" source address="192.168.1.66" port protocol="udp" port="53" accept"
    firewall-cmd --reload
    ```
+   **删除规则把`--add-rich-rule`改成`--remove-rich-rule`即可**
    * iptables
    ``` bash
    iptables -I INPUT -p tcp --dport 80 -j DROP
@@ -101,5 +102,6 @@ cp ../src/config.json ./
    service iptables save
    service iptables restart
    ```
+   **删除规则先执行`iptables -L INPUT -line-numbers`以序号形式列出，然后执行`iptables -D INPUT 1`删除指定序号规则**
 ---
 ***更多内容持续更新中...***

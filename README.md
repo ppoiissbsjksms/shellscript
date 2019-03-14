@@ -103,5 +103,6 @@ cp ../src/config.json ./
    service iptables restart
    ```
    **删除规则先执行`iptables -L INPUT -line-numbers`以序号形式列出，然后执行`iptables -D INPUT 1`删除指定序号规则**
+4. 将本地电脑或中转VPS的DNS地址修改为VPS的IP，搞定。如果不好使，记得只保留一个DNS地址试试！
 ---
 ***更多内容持续更新中...***

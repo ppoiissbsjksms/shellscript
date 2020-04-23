@@ -43,23 +43,6 @@ bash xmrig-proxy.sh
 wget -N --no-check-certificate https://raw.githubusercontent.com/myxuchangbin/shellscript/master/xmr-stak.sh && chmod +x xmr-stak.sh && bash xmr-stak.sh
 ```
 
-## xmrig-proxy.patch
-
-- 脚本说明: XMRig Proxy without donate
-- 适用版本: xmrig-proxy v2.6.3
-
-### 使用方法：
-
-``` bash
-yum install -y patch git cmake cmake3 gcc gcc-c++ libuv-static libstdc++-static libuuid-devel libmicrohttpd-devel
-git clone https://github.com/xmrig/xmrig-proxy.git
-wget -N --no-check-certificate https://raw.githubusercontent.com/myxuchangbin/shellscript/master/xmrig-proxy.patch
-patch -p0 < xmrig-proxy.patch
-cd xmrig-proxy && mkdir build && cd build
-cmake3 .. && make
-rm -rf CM* Makefile cmake_install.cmake
-cp ../src/config.json ./
-```
 
 ## 解锁Netflix
 

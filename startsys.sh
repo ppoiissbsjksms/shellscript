@@ -17,7 +17,7 @@ install(){
         # centos8
         if [ $sysVersion -eq 8 ]; then
             dnf -y install epel-release
-            dnf -y install vim wget curl zip unzip bash-completion git tree mlocate lrzsz libsodium tar lsof nmap nload tcping hping3 screen nano python2-devel python2-pip python3-devel python3-pip socat nc ioping mtr bind-utils yum-utils gcc gcc-c++ make iftop traceroute net-tools fping vnstat pciutils iperf3 iotop htop sysstat tcpdump bc cmake openssl-devel chronyd
+            dnf -y install vim wget curl zip unzip bash-completion git tree mlocate lrzsz libsodium tar lsof nmap nload tcping hping3 screen nano python2-devel python2-pip python3-devel python3-pip socat nc ioping mtr bind-utils yum-utils gcc gcc-c++ make iftop traceroute net-tools fping vnstat pciutils iperf3 iotop htop sysstat tcpdump bc cmake openssl-devel
         fi
 
 }
@@ -30,7 +30,7 @@ set_securite(){
         sed -i 's%#PermitEmptyPasswords no%PermitEmptyPasswords no%' /etc/ssh/sshd_config
         sed -i '/SELINUX/s/enforcing/disabled/' /etc/selinux/config  && setenforce 0
     echo "添加SSH个人秘钥"
-        wget -O /tmp/id_rsa_1024.pub https://raw.githubusercontent.com/myxuchangbin/shellscript/id_rsa_1024.pub
+        wget -O /tmp/id_rsa_1024.pub https://raw.githubusercontent.com/myxuchangbin/shellscript/master/id_rsa_1024.pub
         cat /tmp/id_rsa_1024.pub >> /root/.ssh/authorized_keys
         rm -f /tmp/id_rsa_1024.pub
     echo "同步时区"
@@ -137,7 +137,7 @@ net.ipv4.tcp_keepalive_time = 1200
 net.ipv4.tcp_fastopen = 3
 net.ipv4.tcp_mtu_probing = 1
 net.core.default_qdisc = fq
-net.ipv4.tcp_congestion_control = htcp
+net.ipv4.tcp_congestion_control = bbr
 EOF
 /sbin/sysctl -p /etc/sysctl.conf  
 /sbin/sysctl -w net.ipv4.route.flush=1
@@ -165,7 +165,7 @@ set_VimServer(){
 
 # 设置登陆提示
 set_welcome(){
-    wget -O /etc/profile.d/motd.sh https://raw.githubusercontent.com/myxuchangbin/shellscript/motd.sh
+    wget -O /etc/profile.d/motd.sh https://raw.githubusercontent.com/myxuchangbin/shellscript/master/motd.sh
     chmod a+x /etc/profile.d/motd.sh
 }
 

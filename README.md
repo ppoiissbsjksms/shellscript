@@ -21,28 +21,16 @@ wget -N --no-check-certificate https://raw.githubusercontent.com/myxuchangbin/sh
 crontab -e
 */5 * * * *    mysqld-listen.sh    #每隔5分钟，执行一次mysqld-listen.sh脚本。
 ```
-## xmrig-proxy
 
-- 脚本说明: xmrig-proxy启动脚本，一键切换coin钱包
-- 系统支持: Ubuntu12+ CentOS6+
-- 使用说明: 使用前请自行修改脚本中相关配置信息
+## startsys.sh
 
-### 使用方法：
-``` bash
-wget -N --no-check-certificate https://raw.githubusercontent.com/myxuchangbin/shellscript/master/xmrig-proxy/xmrig-proxy.sh && chmod +x xmrig-proxy.sh
-bash xmrig-proxy.sh
-```
-
-## xmr-stak.sh
-
-- 脚本说明: 一键安装xmr-stak
-- 系统支持: CentOS6+ （暂不支持其他系统）
+- 脚本说明: Centos7/8系统个性化
+- 系统支持: Centos7/8
 
 ### 使用方法：
 ``` bash
-wget -N --no-check-certificate https://raw.githubusercontent.com/myxuchangbin/shellscript/master/xmr-stak.sh && chmod +x xmr-stak.sh && bash xmr-stak.sh
+wget -N --no-check-certificate https://raw.githubusercontent.com/myxuchangbin/shellscript/master/startsys.sh && bash startsys.sh
 ```
-
 
 ## 解锁Netflix
 

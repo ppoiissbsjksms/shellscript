@@ -31,6 +31,8 @@ set_securite(){
         sed -i '/SELINUX/s/enforcing/disabled/' /etc/selinux/config  && setenforce 0
     echo "添加SSH个人秘钥"
         wget -O /tmp/id_rsa_1024.pub https://raw.githubusercontent.com/myxuchangbin/shellscript/master/id_rsa_1024.pub
+		[ -e /root/.ssh ] || mkdir -p /root/.ssh
+		[ -e /root/.ssh/authorized_keys ] || touch /root/.ssh/authorized_keys
         cat /tmp/id_rsa_1024.pub >> /root/.ssh/authorized_keys
         rm -f /tmp/id_rsa_1024.pub
     echo "同步时区"

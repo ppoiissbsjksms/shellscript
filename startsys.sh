@@ -59,7 +59,7 @@ set_securite(){
         export LC_ALL=zh_CN.UTF-8
         echo 'LANG=zh_CN.UTF-8' > /etc/locale.conf
     echo "设置每天6点释放内存"
-        echo "0 6 * * * sync; echo 3 > /proc/sys/vm/drop_caches" >> /etc/crontab
+        echo "0 6 * * * root sync; echo 3 > /proc/sys/vm/drop_caches" >> /etc/crontab
 }
 
 #设置文件句柄和进程

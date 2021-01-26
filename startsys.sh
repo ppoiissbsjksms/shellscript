@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-#Uses: 适用centos7/8
-#date:2020-11-12
+#Uses: 仅适用centos7/8
+#date: 2021-01-26
 
 # 判断Centos系统版本
 sysVersion=`cat /etc/redhat-release|sed -r 's/.* ([0-9]+)\..*/\1/'`
@@ -25,14 +25,26 @@ install(){
 #安全设置
 set_securite(){
     echo "关闭SeLinux"
-        sed -i 's%#UseDNS yes%UseDNS no%' /etc/ssh/sshd_config
-        sed -i 's%GSSAPIAuthentication yes%GSSAPIAuthentication no%' /etc/ssh/sshd_config
-        sed -i 's%#PermitEmptyPasswords no%PermitEmptyPasswords no%' /etc/ssh/sshd_config
-        sed -i '/SELINUX/s/enforcing/disabled/' /etc/selinux/config  && setenforce 0
+        if grep -q "^UseDNS" /etc/ssh/sshd_config;then
+            sed -i '/^UseDNS/s/yes/no/' /etc/ssh/sshd_config
+        else
+           sed -i '$a UseDNS no' /etc/ssh/sshd_config
+        fi
+        if grep -q "^GSSAPIAuthentication" /etc/ssh/sshd_config;then
+            sed -i '/^GSSAPIAuthentication/s/yes/no/' /etc/ssh/sshd_config
+        else
+           sed -i '$a GSSAPIAuthentication no' /etc/ssh/sshd_config
+        fi
+        if grep -q "^PermitEmptyPasswords" /etc/ssh/sshd_config;then
+            sed -i '/^PermitEmptyPasswords/s/yes/no/' /etc/ssh/sshd_config
+        else
+           sed -i '$a PermitEmptyPasswords no' /etc/ssh/sshd_config
+        fi
+        sed -i '/SELINUX/s/enforcing/disabled/' /etc/selinux/config && setenforce 0
     echo "添加SSH个人秘钥"
         wget -O /tmp/id_rsa_1024.pub https://raw.githubusercontent.com/myxuchangbin/shellscript/master/id_rsa_1024.pub
-		[ -e /root/.ssh ] || mkdir -p /root/.ssh
-		[ -e /root/.ssh/authorized_keys ] || touch /root/.ssh/authorized_keys
+        [ -e /root/.ssh ] || mkdir -p /root/.ssh
+        [ -e /root/.ssh/authorized_keys ] || touch /root/.ssh/authorized_keys
         cat /tmp/id_rsa_1024.pub >> /root/.ssh/authorized_keys
         rm -f /tmp/id_rsa_1024.pub
     echo "同步时区"
@@ -148,7 +160,6 @@ EOF
 # 配置vim编辑器
 set_VimServer(){
     echo "设置Vim编辑器"
-    echo "set number" >>/etc/vimrc
     echo "set cursorline" >>/etc/vimrc
     echo "set autoindent" >>/etc/vimrc
     echo "set showmode" >>/etc/vimrc
@@ -165,6 +176,26 @@ set_VimServer(){
     source /etc/bashrc
 }
 
+set_journal(){
+    [ -e /root/.ssh ] || mkdir /var/log/journal
+    if grep -q "^Storage" /etc/systemd/journald.conf;then
+        sed -i '/^Storage/s/auto/persistent/' /etc/systemd/journald.conf
+    else
+       sed -i '$a Storage=persistent' /etc/systemd/journald.conf
+    fi
+    if grep -q "^ForwardToSyslog" /etc/systemd/journald.conf;then
+        sed -i '/^ForwardToSyslog/s/yes/no/' /etc/systemd/journald.conf
+    else
+       sed -i '$a ForwardToSyslog=no' /etc/systemd/journald.conf
+    fi
+    if grep -q "^ForwardToWall" /etc/systemd/journald.conf;then
+        sed -i '/^ForwardToWall/s/yes/no/' /etc/systemd/journald.conf
+    else
+       sed -i '$a ForwardToWall=no' /etc/systemd/journald.conf
+    fi
+    systemctl restart systemd-journald
+}
+
 # 设置登陆提示
 set_welcome(){
     wget -O /etc/profile.d/motd.sh https://raw.githubusercontent.com/myxuchangbin/shellscript/master/motd.sh
@@ -177,6 +208,7 @@ main(){
     set_file
     set_sysctl
     set_VimServer
+    set_journal
     set_welcome
 }
 main

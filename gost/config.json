@@ -1,0 +1,55 @@
+{
+    "Debug": false,
+    "Retries": 3,
+    "ServeNodes": [
+        "tcp://:2000/:6666",
+        "udp://:2000/:6666"
+    ],
+    "ChainNodes": [
+        "ws://1.1.1.1:80"
+    ],
+    "Routes": [
+        {
+            "Retries": 3,
+            "ServeNodes": [
+            ],
+            "ChainNodes": [
+            ]
+        },
+        {
+            "Retries": 3,
+            "ServeNodes": [
+            ],
+            "ChainNodes": [
+            ]
+        },
+        {
+            "Retries": 3,
+            "ServeNodes": [
+            ],
+            "ChainNodes": [
+            ]
+        },
+        {
+            "Retries": 3,
+            "ServeNodes": [
+            ],
+            "ChainNodes": [
+            ]
+        },
+        {
+            "Retries": 3,
+            "ServeNodes": [
+            ],
+            "ChainNodes": [
+            ]
+        },
+        {
+            "Retries": 3,
+            "ServeNodes": [
+            ],
+            "ChainNodes": [
+            ]
+        }
+    ]
+}

@@ -1,0 +1,20 @@
+[Unit]
+Description=Gost server
+After=syslog.target
+After=network.target
+
+[Service]
+LimitCORE=infinity
+LimitNOFILE=512000
+LimitNPROC=512000
+Type=simple
+StandardOutput=null
+#StandardError=journal
+WorkingDirectory=/root/gost
+ExecStart=/opt/gost/gost -C /opt/gost/config.json
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

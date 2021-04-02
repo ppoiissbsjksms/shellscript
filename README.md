@@ -24,12 +24,16 @@ crontab -e
 
 ## startsys.sh
 
-- 脚本说明: Centos7/8系统个性化
+- 脚本说明: Centos7/8系统开箱优化（个人使用）
 - 系统支持: Centos7/8
 
 ### 使用方法：
 ``` bash
 wget -N --no-check-certificate https://raw.githubusercontent.com/myxuchangbin/shellscript/master/startsys.sh && bash startsys.sh
+```
+国内加速：
+``` bash
+wget -N --no-check-certificate https://raw.fastgit.org/myxuchangbin/shellscript/master/startsys.sh && bash startsys.sh cn
 ```
 
 ## 解锁Netflix

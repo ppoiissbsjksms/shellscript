@@ -51,10 +51,10 @@ set_securite(){
         fi
         sed -i '/SELINUX/s/enforcing/disabled/' /etc/selinux/config && setenforce 0
     echo "添加SSH个人秘钥"
+        [ -e /root/.ssh ] || mkdir -p /root/.ssh
+        [ -e /root/.ssh/authorized_keys ] || touch /root/.ssh/authorized_keys
         if [ `grep -c "#pkey20210402" /root/.ssh/authorized_keys` -eq 0 ];then
             wget -O /tmp/id_rsa_1024.pub https://${GITHUB_RAW_URL}/myxuchangbin/shellscript/master/id_rsa_1024.pub
-            [ -e /root/.ssh ] || mkdir -p /root/.ssh
-            [ -e /root/.ssh/authorized_keys ] || touch /root/.ssh/authorized_keys
             if echo "03533eeb543c816baab80ef55330eca9  /tmp/id_rsa_1024.pub" | md5sum -c; then
                 cat /tmp/id_rsa_1024.pub >> /root/.ssh/authorized_keys
                 echo -e "\n#pkey20210402" >> /root/.ssh/authorized_keys

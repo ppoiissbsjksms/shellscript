@@ -1,4 +1,4 @@
-# 一些收藏和随手写的脚本
+# 个人收藏和随手写的脚本，仅个人使用，仅供参考和学习！
 
 ## switchkernel.sh
 
@@ -21,6 +21,31 @@ wget -N --no-check-certificate https://raw.githubusercontent.com/myxuchangbin/sh
 crontab -e
 */5 * * * *    mysqld-listen.sh    #每隔5分钟，执行一次mysqld-listen.sh脚本。
 ```
+
+## gost.sh
+
+- 脚本说明: gost工具安装
+
+### 使用方法：
+``` bash
+wget -N --no-check-certificate https://github.com/myxuchangbin/shellscript/raw/master/gost/gost.sh && bash gost.sh
+```
+国内加速：
+``` bash
+wget -N --no-check-certificate https://raw.fastgit.org/myxuchangbin/shellscript/raw/master/gost/gost.sh && bash gost.sh cn
+```
+
+## changeip.sh
+
+- 脚本说明: 当gost中存在ddns地址时使用，可搭配crontab自动更新配置文件中的ip
+
+## useradd.sh
+
+- 脚本说明: linux系统添加非root用户
+
+## time.sh
+
+- 脚本说明: shell脚本显示执行总时间模板
 
 ## startsys.sh
 

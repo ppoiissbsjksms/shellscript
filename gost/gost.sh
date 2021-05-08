@@ -9,8 +9,7 @@ CN=0
 if [ -n "$1" ]; then
     if echo "$1" | grep -qwi "cn"; then
         CN=1
-        GITHUB_RAW_URL="raw.sevencdn.com"
-        #GITHUB_RAW_URL="raw.fastgit.org"
+        GITHUB_RAW_URL="raw.fastgit.org"
         GITHUB_URL="hub.fastgit.org"
     fi
 fi

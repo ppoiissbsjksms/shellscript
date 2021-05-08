@@ -9,8 +9,7 @@ GITHUB_RAW_URL="raw.githubusercontent.com"
 GITHUB_URL="github.com"
 if [ -n "$1" ]; then
     if echo "$1" | grep -qwi "cn"; then
-        GITHUB_RAW_URL="raw.sevencdn.com"
-        #GITHUB_RAW_URL="raw.fastgit.org"
+        GITHUB_RAW_URL="raw.fastgit.org"
         GITHUB_URL="hub.fastgit.org"
     fi
 fi
@@ -170,6 +169,8 @@ net.ipv4.conf.default.accept_redirects = 0
 net.ipv4.conf.all.secure_redirects = 0
 net.ipv4.conf.default.secure_redirects = 0
 #
+net.ipv4.tcp_no_metrics_save = 1
+#net.ipv4.tcp_moderate_rcvbuf = 1
 net.ipv4.tcp_retries2 = 8
 net.ipv4.tcp_slow_start_after_idle = 0
 net.ipv4.route.gc_timeout = 100

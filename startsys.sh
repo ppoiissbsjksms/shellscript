@@ -250,6 +250,27 @@ set_journal(){
     systemctl restart systemd-journald
 }
 
+set_readlines(){
+    if grep -q '^"\\e.*": history-search-backward' /etc/inputrc;then
+        sed -i 's/^"\\e.*": history-search-backward/"\\e\[A": history-search-backward/g' /etc/inputrc
+    else
+        sed -i '$a # map "up arrow" to search the history based on lead characters typed' /etc/inputrc
+        sed -i '$a "\\e\[A": history-search-backward' /etc/inputrc
+    fi
+    if grep -q '^"\\e.*": history-search-forward' /etc/inputrc;then
+        sed -i 's/^"\\e.*": history-search-forward/"\\e\[B": history-search-forward/g' /etc/inputrc
+    else
+        sed -i '$a # map "down arrow" to search history based on lead characters typed' /etc/inputrc
+        sed -i '$a "\\e\[B": history-search-forward' /etc/inputrc
+    fi
+    if grep -q '"\\e.*": kill-word' /etc/inputrc;then
+        sed -i 's/"\\e.*": kill-word/"\\e[3;3~": kill-word/g' /etc/inputrc
+    else
+        sed -i '$a # map ALT+Delete to remove word forward' /etc/inputrc
+        sed -i '$a "\\e[3;3~": kill-word' /etc/inputrc
+    fi
+}
+
 # 设置登陆提示
 set_welcome(){
     if [ ! -e /etc/profile.d/motd.sh ];then
@@ -267,6 +288,7 @@ main(){
     set_VimServer
     set_journal
     set_welcome
+    set_readlines
 }
 main
 

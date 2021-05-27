@@ -1,4 +1,4 @@
-# 个人收藏和随手写的脚本，仅个人使用，仅供参考和学习！
+# 个人使用和随手写的脚本，仅供参考和学习！
 
 ## switchkernel.sh
 
@@ -49,8 +49,8 @@ wget -N --no-check-certificate https://raw.fastgit.org/myxuchangbin/shellscript/
 
 ## startsys.sh
 
-- 脚本说明: Centos7/8系统开箱优化（个人使用）
-- 系统支持: Centos7/8
+- 脚本说明: 系统开箱优化，仅供参考和学习
+- 系统支持: Centos7/8 Debian Ubuntu
 
 ### 使用方法：
 ``` bash

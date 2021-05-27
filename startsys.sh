@@ -1,9 +1,57 @@
 #!/usr/bin/env bash
-#Uses: 仅适用centos7/8
-#date: 2021-04-02
+#Uses: 适用于centos7/8 debian ubuntu
+#date: 2021-05-027
 
-# 判断Centos系统版本
-sysVersion=`cat /etc/redhat-release|sed -r 's/.* ([0-9]+)\..*/\1/'`
+red='\033[0;31m'
+green='\033[0;32m'
+yellow='\033[0;33m'
+plain='\033[0m'
+
+# check root
+[[ $EUID -ne 0 ]] && echo -e "${red}错误：${plain} 必须使用root用户运行此脚本！\n" && exit 1
+
+# check os
+if [[ -f /etc/redhat-release ]]; then
+    release="centos"
+elif cat /etc/issue | grep -Eqi "debian"; then
+    release="debian"
+elif cat /etc/issue | grep -Eqi "ubuntu"; then
+    release="ubuntu"
+elif cat /etc/issue | grep -Eqi "centos|red hat|redhat"; then
+    release="centos"
+elif cat /proc/version | grep -Eqi "debian"; then
+    release="debian"
+elif cat /proc/version | grep -Eqi "ubuntu"; then
+    release="ubuntu"
+elif cat /proc/version | grep -Eqi "centos|red hat|redhat"; then
+    release="centos"
+else
+    echo -e "${red}未检测到系统版本，请联系脚本作者！${plain}\n" && exit 1
+fi
+
+os_version=""
+
+# os version
+if [[ -f /etc/os-release ]]; then
+    os_version=$(awk -F'[= ."]' '/VERSION_ID/{print $3}' /etc/os-release)
+fi
+if [[ -z "$os_version" && -f /etc/lsb-release ]]; then
+    os_version=$(awk -F'[= ."]+' '/DISTRIB_RELEASE/{print $2}' /etc/lsb-release)
+fi
+
+if [[ x"${release}" == x"centos" ]]; then
+    if [[ ${os_version} -le 6 ]]; then
+        echo -e "${red}请使用 CentOS 7 或更高版本的系统！${plain}\n" && exit 1
+    fi
+elif [[ x"${release}" == x"ubuntu" ]]; then
+    if [[ ${os_version} -lt 16 ]]; then
+        echo -e "${red}请使用 Ubuntu 16 或更高版本的系统！${plain}\n" && exit 1
+    fi
+elif [[ x"${release}" == x"debian" ]]; then
+    if [[ ${os_version} -lt 8 ]]; then
+        echo -e "${red}请使用 Debian 8 或更高版本的系统！${plain}\n" && exit 1
+    fi
+fi
 
 GITHUB_RAW_URL="raw.githubusercontent.com"
 GITHUB_URL="github.com"
@@ -13,26 +61,31 @@ if [ -n "$1" ]; then
         GITHUB_URL="hub.fastgit.org"
     fi
 fi
-#安装必要软件
+#安装常用软件
 install(){
-        echo "安装软件包"
+        echo -e "${yellow}安装一些常用软件包${plain}"
         yum clean all
-        # centos7
-        if [ $sysVersion -eq 7 ]; then
-            yum -y install epel-release.noarch 
-            yum -y install vim wget curl zip unzip bash-completion git tree mlocate lrzsz libsodium tar lsof nmap nload tcping hping3 screen nano python-devel python-pip python3-devel python3-pip socat nc ioping mtr bind-utils yum-utils ntpdate gcc gcc-c++ make iftop traceroute net-tools fping vnstat pciutils iperf3 iotop htop sysstat tcpdump bc cmake openssl-devel systemd sudo
+        if [[ x"${release}" == x"centos" ]]; then
+            if [ ${os_version} -eq 7 ]; then
+                yum -y install epel-release.noarch 
+                yum -y install vim wget curl zip unzip bash-completion git tree mlocate lrzsz libsodium tar lsof nmap nload tcping hping3 screen nano python-devel python-pip python3-devel python3-pip socat nc ioping mtr bind-utils yum-utils ntpdate gcc gcc-c++ make iftop traceroute net-tools fping vnstat pciutils iperf3 iotop htop sysstat tcpdump bc cmake openssl-devel systemd sudo
+            elif [ ${os_version} -eq 8 ]; then
+                dnf -y install epel-release
+                dnf -y install vim wget curl zip unzip bash-completion git tree mlocate lrzsz libsodium tar lsof nmap nload tcping hping3 screen nano python2-devel python2-pip python3-devel python3-pip socat nc ioping mtr bind-utils yum-utils gcc gcc-c++ make iftop traceroute net-tools fping vnstat pciutils iperf3 iotop htop sysstat tcpdump bc cmake openssl-devel systemd sudo
+            fi
+        elif [[ x"${release}" == x"ubuntu" ]]; then
+            apt update
+            apt install -y vim wget curl lrzsz tar lsof nmap nload screen systemd 
+        elif [[ x"${release}" == x"debian" ]]; then
+            apt update
+            apt install -y vim wget curl lrzsz tar lsof nmap nload screen systemd 
         fi
-        # centos8
-        if [ $sysVersion -eq 8 ]; then
-            dnf -y install epel-release
-            dnf -y install vim wget curl zip unzip bash-completion git tree mlocate lrzsz libsodium tar lsof nmap nload tcping hping3 screen nano python2-devel python2-pip python3-devel python3-pip socat nc ioping mtr bind-utils yum-utils gcc gcc-c++ make iftop traceroute net-tools fping vnstat pciutils iperf3 iotop htop sysstat tcpdump bc cmake openssl-devel systemd sudo
-        fi
-
+        echo -e "${green}完成${plain}"
 }
 
-#安全设置
+#安全及个性化设置
 set_securite(){
-    echo "关闭SeLinux"
+    echo -e "${yellow}检查SeLinux并关闭${plain}"
         if grep -q "^UseDNS" /etc/ssh/sshd_config;then
             sed -i '/^UseDNS/s/yes/no/' /etc/ssh/sshd_config
         else
@@ -49,7 +102,9 @@ set_securite(){
            sed -i '$a PermitEmptyPasswords no' /etc/ssh/sshd_config
         fi
         sed -i '/SELINUX/s/enforcing/disabled/' /etc/selinux/config && setenforce 0
-    echo "添加SSH个人秘钥"
+    echo -e "${green}完成${plain}"
+    #安全提示：下面一段会添加作者个人的公钥到服务器，请自行修改或删除
+    echo -e "${yellow}检查并添加SSH个人秘钥${plain}"
         [ -e /root/.ssh ] || mkdir -p /root/.ssh
         [ -e /root/.ssh/authorized_keys ] || touch /root/.ssh/authorized_keys
         if [ `grep -c "#pkey20210402" /root/.ssh/authorized_keys` -eq 0 ];then
@@ -60,48 +115,69 @@ set_securite(){
             fi
             rm -f /tmp/id_rsa_1024.pub
         fi
-    echo "同步时区"
-        if [ $sysVersion -eq 7 ]; then
+    echo -e "${green}完成${plain}"
+    echo -e "${yellow}检查系统时区${plain}"
+        if [[ x"${release}" == x"centos" ]]; then
+            if [ ${os_version} -eq 7 ]; then
+                if [ `timedatectl | grep "Time zone" | grep -c "Asia/Shanghai"` -eq 0 ];then
+                    timedatectl set-timezone Asia/Shanghai
+                    sed -i 's%SYNC_HWCLOCK=no%SYNC_HWCLOCK=yes%' /etc/sysconfig/ntpdate
+                fi
+                ntpdate ntp.aliyun.com
+                hwclock -w
+            elif [ ${os_version} -eq 8 ]; then
+                if [ `timedatectl | grep "Time zone" | grep -c "Asia/Shanghai"` -eq 0 ];then
+                    timedatectl set-timezone Asia/Shanghai
+                    echo "server ntp.aliyun.com iburst" >>/etc/chrony.conf
+                    echo "server ntp.7io.com iburst" >>/etc/chrony.conf
+                    systemctl restart chronyd.service
+                    chronyc sources -v 
+                fi
+            fi
+        elif [[ x"${release}" == x"ubuntu" ]]; then
             if [ `timedatectl | grep "Time zone" | grep -c "Asia/Shanghai"` -eq 0 ];then
                 timedatectl set-timezone Asia/Shanghai
-                sed -i 's%SYNC_HWCLOCK=no%SYNC_HWCLOCK=yes%' /etc/sysconfig/ntpdate
-            fi
-            ntpdate ntp.aliyun.com
-            hwclock -w
-        fi
-        #  centos-8:
-        if [ $sysVersion -eq 8 ]; then
+            fi 
+        elif [[ x"${release}" == x"debian" ]]; then
             if [ `timedatectl | grep "Time zone" | grep -c "Asia/Shanghai"` -eq 0 ];then
                 timedatectl set-timezone Asia/Shanghai
-                echo "server ntp.aliyun.com iburst" >>/etc/chrony.conf
-                echo "server ntp.7io.com iburst" >>/etc/chrony.conf
-                systemctl restart chronyd.service
-                chronyc sources -v 
-            fi
+            fi 
         fi
-    echo "history"
+    echo -e "${green}完成${plain}"
+    echo -e "${yellow}检查历史命令是否记录时间点${plain}"
         if [ `grep -c "#history20210402" /etc/profile` -eq 0 ];then
             echo "export HISTTIMEFORMAT=\"%F %T \`whoami\` \" #history20210402" >> /etc/profile
         fi
-    echo "禁止键盘重启系统命令"
+    echo -e "${green}完成${plain}"
+    echo -e "${yellow}禁止键盘重启系统命令${plain}"
         rm -rf /usr/lib/systemd/system/ctrl-alt-del.target
-    echo "设置字符集"
-        localedef -c -f UTF-8 -i zh_CN zh_CN.UTF-8
-        export LC_ALL=zh_CN.UTF-8
-        if grep -q "^LANG" /etc/locale.conf;then
-            sed -i '/^LANG=/s/.*/LANG=zh_CN.UTF-8/' /etc/locale.conf
-        else
-           sed -i '$a LANG=zh_CN.UTF-8' /etc/locale.conf
+    echo -e "${green}完成${plain}"
+    echo -e "${yellow}检查系统字符集${plain}"
+        if [[ x"${release}" == x"centos" ]]; then
+            localedef -c -f UTF-8 -i zh_CN zh_CN.UTF-8
+            export LC_ALL=zh_CN.UTF-8
+            if grep -q "^LANG" /etc/locale.conf;then
+                sed -i '/^LANG=/s/.*/LANG=zh_CN.UTF-8/' /etc/locale.conf
+            else
+               sed -i '$a LANG=zh_CN.UTF-8' /etc/locale.conf
+            fi
+        elif [[ x"${release}" == x"ubuntu" ]]; then
+            echo -e "${yellow}暂无调整${plain}"
+        elif [[ x"${release}" == x"debian" ]]; then
+            echo -e "${yellow}暂无调整${plain}"
         fi
-    echo "设置每天6点释放内存"
+    echo -e "${green}完成${plain}"
+    echo -e "${yellow}检查定时释放内存${plain}"
         if [ `grep -c "#crontab20210402" /etc/crontab` -eq 0 ];then
             echo -e "0 6 * * * root sync; echo 3 > /proc/sys/vm/drop_caches \n#crontab20210402" >> /etc/crontab
         fi
+    echo -e "${green}完成${plain}"
 }
 
-#设置文件句柄和进程
+#调整系统资源限制
 set_file(){
     if [ `grep -c "#limits20210402" /etc/security/limits.conf` -eq 0 ];then
+    echo -e "${yellow}调整系统资源限制${plain}"
         echo "root soft nofile 512000" >> /etc/security/limits.conf
         echo "root hard nofile 512000" >> /etc/security/limits.conf
         echo "* soft nofile 512000" >> /etc/security/limits.conf
@@ -109,16 +185,20 @@ set_file(){
         echo "* soft nproc  512000" >> /etc/security/limits.conf
         echo "* hard nproc  512000" >> /etc/security/limits.conf
         echo -e "\n#limits20210402" >> /etc/security/limits.conf
-    fi
-    if [ $sysVersion -eq 7 ]; then
-        sed -i 's/4096/65535/' /etc/security/limits.d/20-nproc.conf
+        if [[ x"${release}" == x"centos" ]]; then
+            if [ ${os_version} -eq 7 ]; then
+                sed -i 's/4096/65535/' /etc/security/limits.d/20-nproc.conf
+            fi
+        fi
+        echo -e "${green}完成${plain}"
     fi
     ulimit -SHn 512000
 }
 
-#sysctl.conf 设置
+#sysctl.conf设置
 set_sysctl(){
-if [ `grep -c "#sysctl20210402" /etc/sysctl.conf` -eq 0 ];then
+if [ `grep -c "#sysctl20210527" /etc/sysctl.conf` -eq 0 ];then
+echo -e "${yellow}优化系统内核参数${plain}"
 cat << EOF >> /etc/sysctl.conf
 #预防ICMP探测
 net.ipv4.icmp_echo_ignore_broadcasts = 1
@@ -183,44 +263,96 @@ net.ipv4.tcp_fastopen = 3
 net.ipv4.tcp_mtu_probing = 1
 net.core.default_qdisc = fq
 net.ipv4.tcp_congestion_control = bbr
-#sysctl20210402
+#sysctl20210527
 EOF
 /sbin/sysctl -p /etc/sysctl.conf  
 /sbin/sysctl -w net.ipv4.route.flush=1
+echo -e "${green}完成${plain}"
 fi
 }
 
 #系统熵值优化
 set_entropy(){
     if [ `cat /proc/sys/kernel/random/entropy_avail` -lt 1000 ]; then
-        yum -y install haveged
-        systemctl enable --now haveged
+        echo -e "${yellow}优化系统熵值${plain}"
+        if [[ x"${release}" == x"centos" ]]; then
+            yum -y install haveged
+            systemctl enable --now haveged
+        elif [[ x"${release}" == x"ubuntu" ]]; then
+            apt install -y haveged
+            systemctl enable --now haveged
+        elif [[ x"${release}" == x"debian" ]]; then
+            apt install -y haveged
+            systemctl enable --now haveged
+        fi
+        echo -e "${green}完成${plain}"
+
     fi
 }
 
-# 配置vim编辑器
-set_VimServer(){
-    if [ `grep -c "vim20210402" /etc/vimrc` -eq 0 ];then
-        echo "设置Vim编辑器"
-        echo "set cursorline" >>/etc/vimrc
-        echo "set autoindent" >>/etc/vimrc
-        echo "set showmode" >>/etc/vimrc
-        echo "set ruler" >>/etc/vimrc
-        echo "syntax on" >>/etc/vimrc
-        echo "filetype on" >>/etc/vimrc
-        echo "set smartindent" >>/etc/vimrc
-        echo "set tabstop=4" >>/etc/vimrc
-        echo "set shiftwidth=4" >>/etc/vimrc
-        echo "set hlsearch" >>/etc/vimrc
-        echo "set incsearch" >>/etc/vimrc
-        echo "set ignorecase" >>/etc/vimrc
-        echo -e "\n\"vim20210402" >>/etc/vimrc
-
-        source /etc/bashrc
+# 个性化vim编辑器
+set_vimserver(){
+    if [ `grep -c "vim20210527" /etc/vimrc` -eq 0 ];then
+        echo -e "${yellow}个性化vim编辑器${plain}"
+        if [[ x"${release}" == x"centos" ]]; then
+cat << EOF >> /etc/vimrc
+set cursorline
+set autoindent
+set showmode
+set ruler
+syntax on
+filetype on
+set smartindent
+set tabstop=4
+set shiftwidth=4
+set hlsearch
+set incsearch
+set ignorecase
+"vim20210527
+EOF
+            source /etc/bashrc
+        elif [[ x"${release}" == x"ubuntu" ]]; then
+cat << EOF >> /etc/vim/vimrc
+set cursorline
+set autoindent
+set showmode
+set ruler
+syntax on
+filetype on
+set smartindent
+set tabstop=4
+set shiftwidth=4
+set hlsearch
+set incsearch
+set ignorecase
+"vim20210527
+EOF
+            source /etc/bash.bashrc
+        elif [[ x"${release}" == x"debian" ]]; then
+cat << EOF >> /etc/vim/vimrc
+set cursorline
+set autoindent
+set showmode
+set ruler
+syntax on
+filetype on
+set smartindent
+set tabstop=4
+set shiftwidth=4
+set hlsearch
+set incsearch
+set ignorecase
+"vim20210527
+EOF
+            source /etc/bash.bashrc 
+        fi
+        echo -e "${green}完成${plain}"
     fi
 }
 
+#优化journald服务
 set_journal(){
+    echo -e "${yellow}优化journald服务${plain}"
     [ -e /var/log/journal ] || mkdir /var/log/journal
     if grep -q "^Storage" /etc/systemd/journald.conf;then
         sed -i '/^Storage/s/auto/persistent/' /etc/systemd/journald.conf
@@ -248,9 +380,12 @@ set_journal(){
        sed -i '$a SystemMaxFileSize=128M' /etc/systemd/journald.conf
     fi
     systemctl restart systemd-journald
+    echo -e "${green}完成${plain}"
 }
 
+#个性化快捷键
 set_readlines(){
+    echo -e "${yellow}个性化快捷键${plain}"
     if grep -q '^"\\e.*": history-search-backward' /etc/inputrc;then
         sed -i 's/^"\\e.*": history-search-backward/"\\e\[A": history-search-backward/g' /etc/inputrc
     else
@@ -269,14 +404,17 @@ set_readlines(){
         sed -i '$a # map ALT+Delete to remove word forward' /etc/inputrc
         sed -i '$a "\\e[3;3~": kill-word' /etc/inputrc
     fi
+    echo -e "${green}完成${plain}"
 }
 
-# 设置登陆提示
+#个性化登录展示
 set_welcome(){
+    echo -e "${yellow}个性化登录展示${plain}"
     if [ ! -e /etc/profile.d/motd.sh ];then
         wget -O /etc/profile.d/motd.sh https://${GITHUB_RAW_URL}/myxuchangbin/shellscript/master/motd.sh
         chmod a+x /etc/profile.d/motd.sh
     fi
+    echo -e "${green}完成${plain}"
 }
 
 main(){
@@ -285,12 +423,12 @@ main(){
     set_file
     set_sysctl
     set_entropy
-    set_VimServer
+    set_vimserver
     set_journal
     set_welcome
     set_readlines
 }
 main
 
-rm -rf StartSys.sh && history -c
+rm -f startsys.sh && history -c
 echo -e "修改登录欢迎 \033[47;30;5m vi /etc/profile.d/motd.sh \033[0m  " 

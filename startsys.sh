@@ -292,9 +292,9 @@ set_entropy(){
 
 # 个性化vim编辑器
 set_vimserver(){
-    if [ `grep -c "vim20210527" /etc/vimrc` -eq 0 ];then
-        echo -e "${yellow}个性化vim编辑器${plain}"
-        if [[ x"${release}" == x"centos" ]]; then
+    if [[ x"${release}" == x"centos" ]]; then
+        if [ `grep -c "vim20210527" /etc/vimrc` -eq 0 ];then
+            echo -e "${yellow}个性化vim编辑器${plain}"
 cat << EOF >> /etc/vimrc
 set cursorline
 set autoindent
@@ -311,7 +311,11 @@ set ignorecase
 "vim20210527
 EOF
             source /etc/bashrc
-        elif [[ x"${release}" == x"ubuntu" ]]; then
+            echo -e "${green}完成${plain}"
+        fi
+    elif [[ x"${release}" == x"ubuntu" ]]; then
+        if [ `grep -c "vim20210527" /etc/vim/vimrc` -eq 0 ];then
+            echo -e "${yellow}个性化vim编辑器${plain}"
 cat << EOF >> /etc/vim/vimrc
 set cursorline
 set autoindent
@@ -328,7 +332,11 @@ set ignorecase
 "vim20210527
 EOF
             source /etc/bash.bashrc
-        elif [[ x"${release}" == x"debian" ]]; then
+            echo -e "${green}完成${plain}"
+        fi
+    elif [[ x"${release}" == x"debian" ]]; then
+        if [ `grep -c "vim20210527" /etc/vim/vimrc` -eq 0 ];then
+            echo -e "${yellow}个性化vim编辑器${plain}"
 cat << EOF >> /etc/vim/vimrc
 set cursorline
 set autoindent
@@ -344,9 +352,9 @@ set incsearch
 set ignorecase
 "vim20210527
 EOF
-            source /etc/bash.bashrc 
+            source /etc/bash.bashrc
+            echo -e "${green}完成${plain}"
         fi
-        echo -e "${green}完成${plain}"
     fi
 }
 

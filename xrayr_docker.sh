@@ -107,6 +107,12 @@ install_XrayR() {
     sed -i "s/NodeType: V2ray/NodeType: ${nodetype}/" /opt/xrayr/config_${xrayrname}.yml
     docker pull crackair/xrayr:latest
     docker run --restart=always --name xrayr_${xrayrname} -d -v /opt/xrayr/config_${xrayrname}.yml:/etc/XrayR/config.yml -v /opt/xrayr/dns_${xrayrname}.json:/etc/XrayR/dns.json --network=host crackair/xrayr:latest
+    docker ps | grep -w "xrayr_${xrayrname}"
+    if [[ $? -eq 0 ]]; then
+        docker ps
+        echo -e "${green}nodeid为:${nodeid}的节点已成功安装.${plain}"
+        echo -e "${green}如果无法正常启动请先检查前端配置是否正确.${plain}"
+    fi
 }
 
 hello(){
@@ -133,12 +139,15 @@ apihost=www.domain.com
 apikey=demokey
 nodeid=demoid
 
-
 # -w webApiHost
 # -k webApiKey
-# -n NodeID
+# -i NodeID
 # -t NodeType
 # -h help
+if [[ $# -eq 0 ]];then
+    help
+    exit 1
+fi
 while getopts ":w:k:i:t:h" optname
 do
     case "$optname" in

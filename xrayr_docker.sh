@@ -100,11 +100,11 @@ install_XrayR() {
         echo -e "${red}下载失败，请确保你的服务器能够下载 Github 的文件${plain}"
         exit 1
     fi
-    sed -i "s/Level: debug/Level: none/" /opt/xrayr/config_${xrayrname}.yml
     sed -i "s?http://127.0.0.1:667?${apihost}?" /opt/xrayr/config_${xrayrname}.yml
     sed -i "s/123/${apikey}/" /opt/xrayr/config_${xrayrname}.yml
     sed -i "s/41/${nodeid}/" /opt/xrayr/config_${xrayrname}.yml
     sed -i "s/NodeType: V2ray/NodeType: ${nodetype}/" /opt/xrayr/config_${xrayrname}.yml
+    sed -i "s/CertMode: dns/CertMode: ${certmode}/" /opt/xrayr/config_${xrayrname}.yml
     docker pull crackair/xrayr:latest
     docker run --restart=always --name xrayr_${xrayrname} -d -v /opt/xrayr/config_${xrayrname}.yml:/etc/XrayR/config.yml -v /opt/xrayr/dns_${xrayrname}.json:/etc/XrayR/dns.json --network=host crackair/xrayr:latest
     docker ps | grep -w "xrayr_${xrayrname}"
@@ -138,11 +138,18 @@ help(){
 apihost=www.domain.com
 apikey=demokey
 nodeid=demoid
+certmode=none
 
 # -w webApiHost
 # -k webApiKey
 # -i NodeID
 # -t NodeType
+# -m CertMode
+# -d CertDomain
+# -p Provider
+# -e Email
+# -e1 DNSEnv
+# -e2 DNSEnv
 # -h help
 if [[ $# -eq 0 ]];then
     help
@@ -178,7 +185,6 @@ do
         exit 1
         ;;
     esac
-    #echo "option index is $OPTIND"
 done
 
 if [[ x"${apihost}" == x"www.domain.com" ]]; then

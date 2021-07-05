@@ -1,20 +1,21 @@
 [Unit]
 Description=Gost server
-After=syslog.target
-After=network.target
+After=network-online.target
+Wants=network-online.target systemd-networkd-wait-online.service
 
 [Service]
 LimitCORE=infinity
 LimitNOFILE=512000
 LimitNPROC=512000
 Type=simple
+DynamicUser=true
 StandardOutput=null
 #StandardError=journal
-WorkingDirectory=/root/gost
+WorkingDirectory=/opt/gost
 ExecStart=/opt/gost/gost -C /opt/gost/config.json
-ExecReload=/bin/kill -s HUP $MAINPID
-ExecStop=/bin/kill -s TERM $MAINPID
+User=root
 Restart=always
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target

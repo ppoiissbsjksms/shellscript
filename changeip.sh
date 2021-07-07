@@ -10,7 +10,7 @@ fi
 
 config=/opt/gost/config.json
 IPREX='([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])'
-time=`date +"%Y-%m-%d-%H-%M"`
+time=`date +"%Y-%m-%d-%H:%M"`
 
 for domain in ${domains}
 do
@@ -23,7 +23,7 @@ newip=`dig -t A +noquestion +noadditional +noauthority +tcp @119.29.29.29 ${doma
 if [ $oldip != $newip ]; then
   sed -i "s/$oldip/$newip/" ${config}
   systemctl restart gost
-  echo "${time} - ${oldip} >> ${newip} " >> /tmp/changeip.log
+  echo "${time} - [${domain}] update ${oldip} to ${newip}" >> /tmp/changeip.log
 fi
 done
 tail -n 100 /tmp/changeip.log > /tmp/tmpchangeip.log

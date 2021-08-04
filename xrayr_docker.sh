@@ -89,7 +89,7 @@ install_docker() {
 install_XrayR() {
     apidomain=$(awk -F[/:] '{print $4}' <<< ${apihost})
     xrayrname=${apidomain}_${nodetype}_${nodeid}
-    docker ps | grep -w "xrayr_${xrayrname}"
+    docker ps | grep -wq "xrayr_${xrayrname}"
     if [[ $? -eq 0 ]]; then
         docker rm -f xrayr_${xrayrname}
     fi
@@ -107,11 +107,20 @@ install_XrayR() {
     sed -i "s/CertMode: dns/CertMode: ${certmode}/" /opt/xrayr/config_${xrayrname}.yml
     docker pull crackair/xrayr:latest
     docker run --restart=always --name xrayr_${xrayrname} -d -v /opt/xrayr/config_${xrayrname}.yml:/etc/XrayR/config.yml -v /opt/xrayr/dns_${xrayrname}.json:/etc/XrayR/dns.json --network=host crackair/xrayr:latest
-    docker ps | grep -w "xrayr_${xrayrname}"
+    docker ps | grep -wq "xrayr_${xrayrname}"
     if [[ $? -eq 0 ]]; then
+        crontab -l > /tmp/cronconf
+        if grep -wq "xrayr_${xrayrname}" /tmp/cronconf;then
+            sed -i "/xrayr_${xrayrname}/d" /tmp/cronconf
+        fi
+        echo "3 6 * * *  docker restart xrayr_${xrayrname}" >> /tmp/cronconf
+        crontab /tmp/cronconf
+        rm -f /tmp/cronconf
+        echo -e "${green}定时任务设置成功！每天6点3分重启节点 ${nodeid} 服务${plain}"
+        crontab -l | grep -w "xrayr_${xrayrname}"
+        echo -e "${green}节点 ${nodeid} 安装成功！${plain}"
+        echo -e "${green}如无法启动请先检查前端配置是否正确！${plain}"
         docker ps
-        echo -e "${green}nodeid为:${nodeid}的节点已成功安装.${plain}"
-        echo -e "${green}如果无法正常启动请先检查前端配置是否正确.${plain}"
     fi
 }
 

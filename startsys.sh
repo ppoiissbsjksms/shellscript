@@ -68,17 +68,17 @@ install(){
         if [[ x"${release}" == x"centos" ]]; then
             if [ ${os_version} -eq 7 ]; then
                 yum -y install epel-release.noarch 
-                yum -y install vim wget curl zip unzip bash-completion git tree mlocate lrzsz libsodium tar lsof nmap nload tcping hping3 screen nano python-devel python-pip python3-devel python3-pip socat nc ioping mtr bind-utils yum-utils ntpdate gcc gcc-c++ make iftop traceroute net-tools fping vnstat pciutils iperf3 iotop htop sysstat tcpdump bc cmake openssl-devel systemd sudo
+                yum -y install vim wget curl zip unzip bash-completion git tree mlocate lrzsz libsodium tar lsof nmap nload tcping hping3 screen nano python-devel python-pip python3-devel python3-pip socat nc ioping mtr bind-utils yum-utils ntpdate gcc gcc-c++ make iftop traceroute net-tools fping vnstat pciutils iperf3 iotop htop sysstat tcpdump bc cmake openssl openssl-devel gnutls ca-certificates systemd sudo
             elif [ ${os_version} -eq 8 ]; then
                 dnf -y install epel-release
-                dnf -y install vim wget curl zip unzip bash-completion git tree mlocate lrzsz libsodium tar lsof nmap nload tcping hping3 screen nano python2-devel python2-pip python3-devel python3-pip socat nc ioping mtr bind-utils yum-utils gcc gcc-c++ make iftop traceroute net-tools fping vnstat pciutils iperf3 iotop htop sysstat tcpdump bc cmake openssl-devel systemd sudo
+                dnf -y install vim wget curl zip unzip bash-completion git tree mlocate lrzsz libsodium tar lsof nmap nload tcping hping3 screen nano python2-devel python2-pip python3-devel python3-pip socat nc ioping mtr bind-utils yum-utils gcc gcc-c++ make iftop traceroute net-tools fping vnstat pciutils iperf3 iotop htop sysstat tcpdump bc cmake openssl openssl-devel gnutls ca-certificates systemd sudo
             fi
         elif [[ x"${release}" == x"ubuntu" ]]; then
             apt update
-            apt install -y vim wget curl lrzsz tar lsof nmap nload screen systemd 
+            apt install -y vim wget curl lrzsz tar lsof nmap nload screen openssl libgnutls30 ca-certificates systemd
         elif [[ x"${release}" == x"debian" ]]; then
             apt update
-            apt install -y vim wget curl lrzsz tar lsof nmap nload screen systemd 
+            apt install -y vim wget curl lrzsz tar lsof nmap nload screen openssl libgnutls30 ca-certificates systemd
         fi
         echo -e "${green}完成${plain}"
 }

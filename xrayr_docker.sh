@@ -166,7 +166,7 @@ if [[ $# -eq 0 ]];then
     help
     exit 1
 fi
-while getopts ":w:k:i:t:h" optname
+while getopts ":p:w:k:i:t:h" optname
 do
     case "$optname" in
       "p")

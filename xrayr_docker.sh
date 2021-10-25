@@ -100,6 +100,7 @@ install_XrayR() {
         echo -e "${red}下载失败，请确保你的服务器能够下载 Github 的文件${plain}"
         exit 1
     fi
+    sed -i "s/\"SSpanel\"/\"${paneltype}\"/" /opt/xrayr/config_${xrayrname}.yml
     sed -i "s?http://127.0.0.1:667?${apihost}?" /opt/xrayr/config_${xrayrname}.yml
     sed -i "s/123/${apikey}/" /opt/xrayr/config_${xrayrname}.yml
     sed -i "s/41/${nodeid}/" /opt/xrayr/config_${xrayrname}.yml
@@ -133,9 +134,10 @@ hello(){
 
 help(){
     hello
-    echo "使用示例：bash $0 -w http://www.domain.com:80 -k apikey -i 10 -t V2ray"
+    echo "使用示例：bash $0 -p SSpanel -w http://www.domain.com:80 -k apikey -i 10 -t V2ray"
     echo ""
     echo "  -h     显示帮助信息"
+    echo "  -p     【必填】指定前端面板类型，默认为SSpanel，可选：SSPanel,V2board,PMpanel,Proxypanel"
     echo "  -w     【必填】指定WebApi地址，例：http://www.domain.com:80"
     echo "  -k     【必填】指定WebApikey"
     echo "  -i     【必填】指定节点ID"
@@ -149,13 +151,13 @@ apikey=demokey
 nodeid=demoid
 certmode=none
 
+# -p PanelType
 # -w webApiHost
 # -k webApiKey
 # -i NodeID
 # -t NodeType
 # -m CertMode
 # -d CertDomain
-# -p Provider
 # -e Email
 # -e1 DNSEnv
 # -e2 DNSEnv
@@ -167,6 +169,9 @@ fi
 while getopts ":w:k:i:t:h" optname
 do
     case "$optname" in
+      "p")
+        paneltype=$OPTARG
+        ;;
       "w")
         apihost=$OPTARG
         ;;
@@ -199,6 +204,9 @@ done
 if [[ x"${apihost}" == x"www.domain.com" ]]; then
     echo -e "${red}未输入 -w 选项，请重新运行${plain}"
     exit 1
+elif [[ x"${paneltype}" == x ]]; then
+    echo -e "${red}未指前端面板类型，将使用默认值：SSpanel ${plain}"
+    paneltype=SSpanel
 elif [[ x"${apikey}" == x"demokey" ]]; then
     echo -e "${red}未输入 -k 选项，请重新运行${plain}"
     exit 1

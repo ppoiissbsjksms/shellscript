@@ -201,27 +201,43 @@ do
     esac
 done
 
+echo -e "${green}您输入的参数：${plain}"
 if [[ x"${apihost}" == x"www.domain.com" ]]; then
     echo -e "${red}未输入 -w 选项，请重新运行${plain}"
     exit 1
-elif [[ x"${paneltype}" == x ]]; then
-    echo -e "${red}未指前端面板类型，将使用默认值：SSpanel ${plain}"
+else
+    echo -e "${yellow}前端面板地址：${apihost}${plain}"
+fi
+if [[ x"${paneltype}" == x ]]; then
+    echo -e "${red}前端面板类型：SSpanel (未指定默认使用该值)${plain}"
     paneltype=SSpanel
-elif [[ x"${apikey}" == x"demokey" ]]; then
+else
+    echo -e "${yellow}前端面板类型：${paneltype}${plain}"
+fi
+if [[ x"${apikey}" == x"demokey" ]]; then
     echo -e "${red}未输入 -k 选项，请重新运行${plain}"
     exit 1
-elif [[ x"${nodeid}" == x"demoid" ]]; then
+else
+    echo -e "${yellow}前端通讯秘钥：${apikey}${plain}"
+fi
+if [[ x"${nodeid}" == x"demoid" ]]; then
     echo -e "${red}未输入 -i 选项，请重新运行${plain}"
     exit 1
-elif [[ x"${nodetype}" == x ]]; then
-    echo -e "${red}未指定节点类型，将使用默认值：V2ray ${plain}"
+else
+    echo -e "${yellow}节点ID：${nodeid}${plain}"
+fi
+if [[ x"${nodetype}" == x ]]; then
+    echo -e "${red}节点类型：V2ray(未指定默认使用该值)${plain}"
     nodetype=V2ray
+else
+    echo -e "${yellow}节点类型：${nodetype}${plain}"
 fi
 if [[ ! "${nodeid}" =~ ^[0-9]+$ ]]; then   
     echo -e "${red}-i 选项参数值仅限数字格式，请输入正确的参数值并重新运行${plain}"
     exit 1
 fi 
 
-echo -e "${green}开始安装${plain}"
+echo -e "${green}即将开始安装，取消请按Ctrl+C${plain}"
+sleep 10
 install_docker
 install_XrayR

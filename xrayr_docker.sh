@@ -117,10 +117,10 @@ install_XrayR() {
         echo "3 6 * * *  docker restart xrayr_${xrayrname}" >> /tmp/cronconf
         crontab /tmp/cronconf
         rm -f /tmp/cronconf
-        echo -e "${green}定时任务设置成功！每天6点3分重启节点 ${nodeid} 服务${plain}"
+        echo -e "${green}已添加定时任务：每天6点3分重启节点[${nodeid}]${plain}"
         crontab -l | grep -w "xrayr_${xrayrname}"
-        echo -e "${green}节点 ${nodeid} 安装成功！${plain}"
-        echo -e "${green}如无法启动请先检查前端配置是否正确！${plain}"
+        echo -e "${green}节点[${nodeid}]安装完成${plain}"
+        echo -e "${green}如无法使用，输入命令查看日志：docker logs xrayr_${xrayrname} ${plain}"
         docker ps
     fi
 }

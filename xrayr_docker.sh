@@ -58,28 +58,42 @@ elif [[ x"${release}" == x"debian" ]]; then
     fi
 fi
 
+install_dep(){
+        if [[ x"${release}" == x"centos" ]]; then
+            yum clean all
+            yum makecache
+            if [ ${os_version} -eq 7 ]; then
+                yum install epel-release -y
+                yum install wget curl unzip tar crontabs socat yum-utils ca-certificates -y
+            elif [ ${os_version} -eq 8 ]; then
+                dnf -y install epel-release
+                dnf -y install wget curl unzip tar crontabs socat ca-certificates
+            fi
+        elif [[ x"${release}" == x"ubuntu" ]]; then
+            apt update -y
+            apt install -y wget curl unzip tar crontabs socat yum-utils apt-transport-https ca-certificates gnupg lsb-release
+        elif [[ x"${release}" == x"debian" ]]; then
+            apt update -y
+            apt install -y wget curl unzip tar crontabs socat yum-utils apt-transport-https ca-certificates gnupg lsb-release
+        fi
+}
+
 install_docker() {
     if [[ ! `command -v docker` ]]; then
         if [[ x"${release}" == x"centos" ]]; then
-            yum install epel-release -y
-            yum install wget curl unzip tar crontabs socat yum-utils -y
             yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
             yum install docker-ce docker-ce-cli containerd.io -y
             systemctl enable docker --now
         elif [[ x"${release}" == x"ubuntu" ]]; then
-            apt-get update
-            apt-get install apt-transport-https ca-certificates curl gnupg lsb-release -y
             curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
             echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-            apt-get update
+            apt-get update -y
             apt-get install docker-ce docker-ce-cli containerd.io -y
             systemctl enable docker --now
         elif [[ x"${release}" == x"debian" ]]; then
-            apt-get update
-            apt-get install apt-transport-https ca-certificates curl gnupg lsb-release -y
             curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
             echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-            apt-get update
+            apt-get update -y
             apt-get install docker-ce docker-ce-cli containerd.io -y
             systemctl enable docker --now
         fi
@@ -239,5 +253,6 @@ fi
 
 echo -e "${green}即将开始安装，取消请按Ctrl+C${plain}"
 sleep 10
+install_dep
 install_docker
 install_XrayR

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Wiki: https://docs.ginuerzh.xyz/gost/
+# Wiki: https://v2.gost.run/
 # Usage: bash <(curl -s https://raw.githubusercontent.com/myxuchangbin/shellscript/master/gost/gost.sh)
 # Uninstall: systemctl stop gost; systemctl disable gost; rm -rf /etc/systemd/system/gost.service /opt/gost
 
@@ -22,6 +22,15 @@ fi
 [ -e /opt/gost/config.json ] || wget https://${GITHUB_RAW_URL}/myxuchangbin/shellscript/master/gost/config.json -O /opt/gost/config.json
 [ -e /opt/gost/gost ] && rm -rf /opt/gost/gost
 wget -O - $URL | gzip -d > /opt/gost/gost && chmod +x /opt/gost/gost
+tmpdomain=`echo $RANDOM | md5sum | cut -c1-8`
+openssl req -newkey rsa:4096 \
+            -x509 \
+            -sha256 \
+            -days 3650 \
+            -nodes \
+            -out /opt/gost/cert.pem \
+            -keyout /opt/gost/key.pem \
+            -subj "/C=US/ST=Alabama/L=Montgomery/O=Super Shops/OU=Marketing/CN=www.${tmpdomain}.com"
 
 cat <<EOF > /etc/systemd/system/gost.service
 [Unit]

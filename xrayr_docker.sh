@@ -71,10 +71,10 @@ install_dep(){
             fi
         elif [[ x"${release}" == x"ubuntu" ]]; then
             apt update -y
-            apt install -y wget curl unzip tar crontabs socat yum-utils apt-transport-https ca-certificates gnupg lsb-release
+            apt install -y wget curl unzip tar cron socat apt-transport-https ca-certificates gnupg lsb-release
         elif [[ x"${release}" == x"debian" ]]; then
             apt update -y
-            apt install -y wget curl unzip tar crontabs socat yum-utils apt-transport-https ca-certificates gnupg lsb-release
+            apt install -y wget curl unzip tar cron socat apt-transport-https ca-certificates gnupg lsb-release
         fi
 }
 

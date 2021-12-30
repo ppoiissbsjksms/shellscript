@@ -70,17 +70,17 @@ install(){
                 yum clean all
                 yum makecache
                 yum -y install epel-release
-                yum -y install vim wget curl zip unzip bash-completion git tree mlocate lrzsz crontabs libsodium tar lsof nmap nload tcping hping3 screen nano python-devel python-pip python3-devel python3-pip socat nc ioping mtr bind-utils yum-utils ntpdate gcc gcc-c++ make iftop traceroute net-tools fping vnstat pciutils iperf3 iotop htop sysstat tcpdump bc cmake openssl openssl-devel gnutls ca-certificates systemd sudo
+                yum -y install vim wget curl zip unzip bash-completion git tree mlocate lrzsz crontabs libsodium tar lsof nmap nload screen nano python-devel python-pip python3-devel python3-pip socat nc ioping mtr bind-utils yum-utils ntpdate gcc gcc-c++ make iftop traceroute net-tools fping vnstat pciutils iperf3 iotop htop sysstat tcpdump bc cmake openssl openssl-devel gnutls ca-certificates systemd sudo
             elif [ ${os_version} -eq 8 ]; then
                 dnf -y install epel-release
-                dnf -y install vim wget curl zip unzip bash-completion git tree mlocate lrzsz crontabs libsodium tar lsof nmap nload tcping hping3 screen nano python2-devel python2-pip python3-devel python3-pip socat nc ioping mtr bind-utils yum-utils gcc gcc-c++ make iftop traceroute net-tools fping vnstat pciutils iperf3 iotop htop sysstat tcpdump bc cmake openssl openssl-devel gnutls ca-certificates systemd sudo
+                dnf -y install vim wget curl zip unzip bash-completion git tree mlocate lrzsz crontabs libsodium tar lsof nmap nload screen nano python2-devel python2-pip python3-devel python3-pip socat nc ioping mtr bind-utils yum-utils gcc gcc-c++ make iftop traceroute net-tools fping vnstat pciutils iperf3 iotop htop sysstat tcpdump bc cmake openssl openssl-devel gnutls ca-certificates systemd sudo
             fi
         elif [[ x"${release}" == x"ubuntu" ]]; then
             apt update -y
-            apt install -y vim wget curl lrzsz tar lsof nmap nload iperf3 screen cron openssl libsodium-dev libgnutls30 ca-certificates systemd python-devel python-pip python3-devel python3-pip
+            apt install -y vim wget curl lrzsz tar lsof nmap dnsutils nload iperf3 screen cron openssl libsodium-dev libgnutls30 ca-certificates systemd python-devel python-pip python3-devel python3-pip
         elif [[ x"${release}" == x"debian" ]]; then
             apt update -y
-            apt install -y vim wget curl lrzsz tar lsof nmap nload iperf3 screen cron openssl libsodium-dev libgnutls30 ca-certificates systemd python-devel python-pip python3-devel python3-pip
+            apt install -y vim wget curl lrzsz tar lsof nmap dnsutils nload iperf3 screen cron openssl libsodium-dev libgnutls30 ca-certificates systemd python-devel python-pip python3-devel python3-pip
         fi
         echo -e "${green}完成${plain}"
 }
@@ -170,9 +170,13 @@ set_securite(){
         fi
     echo -e "${green}完成${plain}"
     echo -e "${yellow}检查定时释放内存${plain}"
-        if [ `grep -c "#crontab20210402" /etc/crontab` -eq 0 ];then
-            echo -e "0 6 * * * root sync; echo 3 > /proc/sys/vm/drop_caches \n#crontab20210402" >> /etc/crontab
+        crontab -l > /tmp/drop_cachescronconf
+        if grep -wq "drop_caches" /tmp/drop_cachescronconf;then
+            sed -i "/drop_caches/d" /tmp/drop_cachescronconf
         fi
+        echo "0 6 * * * sync; echo 3 > /proc/sys/vm/drop_caches" >> /tmp/drop_cachescronconf
+        crontab /tmp/drop_cachescronconf
+        rm -f /tmp/drop_cachescronconf
     echo -e "${green}完成${plain}"
 }
 

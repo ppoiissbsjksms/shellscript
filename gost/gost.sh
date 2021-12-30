@@ -56,6 +56,14 @@ RestartSec=5
 WantedBy=multi-user.target
 EOF
 
+crontab -l > /tmp/gostcronconf
+if grep -wq "gost.service" /tmp/gostcronconf;then
+  sed -i "/gost.service/d" /tmp/gostcronconf
+fi
+echo "3 6 * * *  /usr/bin/systemctl restart gost.service" >> /tmp/gostcronconf
+crontab /tmp/gostcronconf
+rm -f /tmp/gostcronconf
+echo -e "定时任务设置成功！每天6点3分重启gost服务"
+
 systemctl daemon-reload
-systemctl enable gost.service
-systemctl restart gost.service
+systemctl enable gost.service --now

@@ -120,6 +120,7 @@ install_XrayR() {
     sed -i "s/41/${nodeid}/" /opt/xrayr/config_${xrayrname}.yml
     sed -i "s/NodeType: V2ray/NodeType: ${nodetype}/" /opt/xrayr/config_${xrayrname}.yml
     sed -i "s/CertMode: dns/CertMode: ${certmode}/" /opt/xrayr/config_${xrayrname}.yml
+    sed -i "s/CertDomain: \"node1.test.com\"/CertDomain: \"${certdomain}\"/" /opt/xrayr/config_${xrayrname}.yml
     docker pull crackair/xrayr:latest
     docker run --restart=always --name xrayr_${xrayrname} -d -v /opt/xrayr/config_${xrayrname}.yml:/etc/XrayR/config.yml -v /opt/xrayr/dns_${xrayrname}.json:/etc/XrayR/dns.json --network=host crackair/xrayr:latest
     docker ps | grep -wq "xrayr_${xrayrname}"
@@ -164,6 +165,7 @@ apihost=www.domain.com
 apikey=demokey
 nodeid=demoid
 certmode=none
+certdomain=cert.domain.com
 
 # -p PanelType
 # -w webApiHost
@@ -180,7 +182,7 @@ if [[ $# -eq 0 ]];then
     help
     exit 1
 fi
-while getopts ":p:w:k:i:t:h" optname
+while getopts ":p:w:k:i:t:m:d:h" optname
 do
     case "$optname" in
       "p")
@@ -197,6 +199,12 @@ do
         ;;
       "t")
         nodetype=$OPTARG
+        ;;
+       "m")
+        certmode=$OPTARG
+        ;;
+        "d")
+        certdomain=$OPTARG
         ;;
       "h")
         help

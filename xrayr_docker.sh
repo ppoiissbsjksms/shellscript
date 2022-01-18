@@ -265,7 +265,7 @@ if [[ x"${nodetype}" == xV2ray ]] || [[ x"${nodetype}" == xTrojan ]]; then
     fi
     if [[ x"${certdomain}" == x"cert.domain.com" ]]; then
         echo -e "${red}未输入 -d 选项，请重新运行，V2ray未开启tls选项时可以忽略${plain}"
-        if [[ x"${nodetype}" == xTrojan ]]
+        if [[ x"${nodetype}" == xTrojan ]]; then
             exit 1
         fi
     else

@@ -157,7 +157,9 @@ help(){
     echo "  -k     【必填】指定WebApikey"
     echo "  -i     【必填】指定节点ID"
     echo "  -t     【选填】指定节点类型，默认为V2ray，可选：V2ray, Shadowsocks, Trojan"
-    echo "目前仅支持上述参数设定，其他参数将保持默认，暂不支持tls模式"
+    echo "  -m     【选填】指定获取证书的方式，默认为none，可选：none,file,http,dns，V2ray+tls和Trojan模式下必填"
+    echo "                 获取ssl证书方式暂只支持http（其他方式可手动），请确保80端口不被其他程序占用"
+    echo "  -d     【选填】指定申请证书域名，无默认值，请提前做好解析，V2ray+tls和Trojan模式下必填"
     echo ""
 }
 
@@ -200,10 +202,10 @@ do
       "t")
         nodetype=$OPTARG
         ;;
-       "m")
+      "m")
         certmode=$OPTARG
         ;;
-        "d")
+      "d")
         certdomain=$OPTARG
         ;;
       "h")
@@ -253,6 +255,22 @@ if [[ x"${nodetype}" == x ]]; then
     nodetype=V2ray
 else
     echo -e "${yellow}节点类型：${nodetype}${plain}"
+fi
+if [[ x"${nodetype}" == xV2ray ]] || [[ x"${nodetype}" == xTrojan ]]; then
+    if [[ x"${certmode}" == x"none" ]]; then
+        echo -e "${yellow}获取证书方式：http(未指定默认使用该值)，V2ray未开启tls选项时可以忽略${plain}"
+        certmode=http
+    else
+        echo -e "${yellow}获取证书方式：${certmode}${plain}"
+    fi
+    if [[ x"${certdomain}" == x"cert.domain.com" ]]; then
+        echo -e "${red}未输入 -d 选项，请重新运行，V2ray未开启tls选项时可以忽略${plain}"
+        if [[ x"${nodetype}" == xTrojan ]]
+            exit 1
+        fi
+    else
+        echo -e "${yellow}申请证书域名：${certdomain}${plain}"
+    fi
 fi
 if [[ ! "${nodeid}" =~ ^[0-9]+$ ]]; then   
     echo -e "${red}-i 选项参数值仅限数字格式，请输入正确的参数值并重新运行${plain}"

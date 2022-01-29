@@ -164,8 +164,8 @@ help(){
     echo "                 获取ssl证书方式暂不支持file，http模式请确保80端口不被其他程序占用"
     echo "  -d     【选填】指定申请证书域名，无默认值，请提前做好解析，V2ray+tls和Trojan模式下必填"
     echo "  -r     【选填】指定dns提供商，所有支持的dns提供商请在此获取：https://go-acme.github.io/lego/dns，模式为dns时必填"
-    echo "  -e1    【选填】采用DNS申请证书需要的环境变量，请参考上文链接内，模式为dns时必填"
-    echo "  -e2    【选填】采用DNS申请证书需要的环境变量，请参考上文链接内，模式为dns时必填"
+    echo "  -e     【选填】采用DNS申请证书需要的环境变量，请参考上文链接内，模式为dns时必填"
+    echo "  -n     【选填】采用DNS申请证书需要的环境变量，请参考上文链接内，模式为dns时必填"
     echo ""
 }
 
@@ -187,14 +187,14 @@ dnsenv2="ALICLOUD_SECRET_KEY: bbb"
 # -d CertDomain
 # -e Email
 # -r Provider
-# -e1 DNSEnv
-# -e2 DNSEnv
+# -e DNSEnv
+# -n DNSEnv
 # -h help
 if [[ $# -eq 0 ]];then
     help
     exit 1
 fi
-while getopts ":p:w:k:i:t:m:d:r:e1:e2:h" optname
+while getopts ":p:w:k:i:t:m:d:r:e:n:h" optname
 do
     case "$optname" in
       "p")
@@ -221,10 +221,10 @@ do
       "r")
         provider=$OPTARG
         ;;
-      "e1")
+      "e")
         dnsenv1=$OPTARG
         ;;
-      "e2")
+      "n")
         dnsenv2=$OPTARG
         ;;
       "h")
@@ -295,14 +295,13 @@ if [[ x"${nodetype}" == xV2ray ]] || [[ x"${nodetype}" == xTrojan ]]; then
             echo -e "${yellow}DNS解析提供商：${provider}${plain}"
         fi
         if [[ x"${dnsenv1}" == x"ALICLOUD_ACCESS_KEY: aaa" ]]; then
-            echo -e "${red}未输入 -e1 选项，请重新运行${plain}"
+            echo -e "${red}未输入 -e 选项，请重新运行${plain}"
             exit 1
         else
             echo -e "${yellow}DNS证书需要的环境变量1：${provider}${plain}"
         fi
         if [[ x"${dnsenv2}" == x"ALICLOUD_SECRET_KEY: bbb" ]]; then
-            echo -e "${red}未输入 -e2 选项，请重新运行${plain}"
-            exit 1
+            echo -e "${red}未输入 -n 选项，请确认${plain}"
         else
             echo -e "${yellow}DNS证书需要的环境变量2：${provider}${plain}"
         fi

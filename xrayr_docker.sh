@@ -121,6 +121,9 @@ install_XrayR() {
     sed -i "s/NodeType: V2ray/NodeType: ${nodetype}/" /opt/xrayr/config_${xrayrname}.yml
     sed -i "s/CertMode: dns/CertMode: ${certmode}/" /opt/xrayr/config_${xrayrname}.yml
     sed -i "s/CertDomain: \"node1.test.com\"/CertDomain: \"${certdomain}\"/" /opt/xrayr/config_${xrayrname}.yml
+    sed -i "s/Provider: alidns/Provider: ${provider}/" /opt/xrayr/config_${xrayrname}.yml
+    sed -i "s/ALICLOUD_ACCESS_KEY: aaa/${dnsenv1}/" /opt/xrayr/config_${xrayrname}.yml
+    sed -i "s/ALICLOUD_SECRET_KEY: bbb/${dnsenv2}/" /opt/xrayr/config_${xrayrname}.yml
     docker pull crackair/xrayr:latest
     docker run --restart=always --name xrayr_${xrayrname} -d -v /opt/xrayr/config_${xrayrname}.yml:/etc/XrayR/config.yml -v /opt/xrayr/dns_${xrayrname}.json:/etc/XrayR/dns.json --network=host crackair/xrayr:latest
     docker ps | grep -wq "xrayr_${xrayrname}"
@@ -158,8 +161,11 @@ help(){
     echo "  -i     【必填】指定节点ID"
     echo "  -t     【选填】指定节点类型，默认为V2ray，可选：V2ray, Shadowsocks, Trojan"
     echo "  -m     【选填】指定获取证书的方式，默认为none，可选：none,file,http,dns，V2ray+tls和Trojan模式下必填"
-    echo "                 获取ssl证书方式暂只支持http（其他方式可手动），请确保80端口不被其他程序占用"
+    echo "                 获取ssl证书方式暂不支持file，http模式请确保80端口不被其他程序占用"
     echo "  -d     【选填】指定申请证书域名，无默认值，请提前做好解析，V2ray+tls和Trojan模式下必填"
+    echo "  -r     【选填】指定dns提供商，所有支持的dns提供商请在此获取：https://go-acme.github.io/lego/dns，模式为dns时必填"
+    echo "  -e1    【选填】采用DNS申请证书需要的环境变量，请参考上文链接内，模式为dns时必填"
+    echo "  -e2    【选填】采用DNS申请证书需要的环境变量，请参考上文链接内，模式为dns时必填"
     echo ""
 }
 
@@ -168,6 +174,9 @@ apikey=demokey
 nodeid=demoid
 certmode=none
 certdomain=cert.domain.com
+provider=alidns
+dnsenv1="ALICLOUD_ACCESS_KEY: aaa"
+dnsenv2="ALICLOUD_SECRET_KEY: bbb"
 
 # -p PanelType
 # -w webApiHost
@@ -177,6 +186,7 @@ certdomain=cert.domain.com
 # -m CertMode
 # -d CertDomain
 # -e Email
+# -r Provider
 # -e1 DNSEnv
 # -e2 DNSEnv
 # -h help
@@ -184,7 +194,7 @@ if [[ $# -eq 0 ]];then
     help
     exit 1
 fi
-while getopts ":p:w:k:i:t:m:d:h" optname
+while getopts ":p:w:k:i:t:m:d:r:e1:e2:h" optname
 do
     case "$optname" in
       "p")
@@ -207,6 +217,15 @@ do
         ;;
       "d")
         certdomain=$OPTARG
+        ;;
+      "r")
+        provider=$OPTARG
+        ;;
+      "e1")
+        dnsenv1=$OPTARG
+        ;;
+      "e2")
+        dnsenv2=$OPTARG
         ;;
       "h")
         help
@@ -270,6 +289,23 @@ if [[ x"${nodetype}" == xV2ray ]] || [[ x"${nodetype}" == xTrojan ]]; then
         fi
     else
         echo -e "${yellow}申请证书域名：${certdomain}${plain}"
+    fi
+    if [[ x"${certmode}" == x"dns" ]]; then
+        if [[ x"${provider}" == x"alidns" ]]; then
+            echo -e "${yellow}DNS解析提供商：${provider}${plain}"
+        fi
+        if [[ x"${dnsenv1}" == x"ALICLOUD_ACCESS_KEY: aaa" ]]; then
+            echo -e "${red}未输入 -e1 选项，请重新运行${plain}"
+            exit 1
+        else
+            echo -e "${yellow}DNS证书需要的环境变量1：${provider}${plain}"
+        fi
+        if [[ x"${dnsenv2}" == x"ALICLOUD_SECRET_KEY: bbb" ]]; then
+            echo -e "${red}未输入 -e2 选项，请重新运行${plain}"
+            exit 1
+        else
+            echo -e "${yellow}DNS证书需要的环境变量2：${provider}${plain}"
+        fi
     fi
 fi
 if [[ ! "${nodeid}" =~ ^[0-9]+$ ]]; then   

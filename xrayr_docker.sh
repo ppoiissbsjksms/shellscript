@@ -123,7 +123,11 @@ install_XrayR() {
     sed -i "s/CertDomain: \"node1.test.com\"/CertDomain: \"${certdomain}\"/" /opt/xrayr/config_${xrayrname}.yml
     sed -i "s/Provider: alidns/Provider: ${provider}/" /opt/xrayr/config_${xrayrname}.yml
     sed -i "s/ALICLOUD_ACCESS_KEY: aaa/${dnsenv1}/" /opt/xrayr/config_${xrayrname}.yml
-    sed -i "s/ALICLOUD_SECRET_KEY: bbb/${dnsenv2}/" /opt/xrayr/config_${xrayrname}.yml
+    if [[ x"${dnsenv2}" == x"ALICLOUD_SECRET_KEY: bbb" ]]; then
+        sed -i "s/ALICLOUD_SECRET_KEY: bbb/d" /opt/xrayr/config_${xrayrname}.yml
+    else
+        sed -i "s/ALICLOUD_SECRET_KEY: bbb/${dnsenv2}/" /opt/xrayr/config_${xrayrname}.yml
+    fi
     docker pull crackair/xrayr:latest
     docker run --restart=always --name xrayr_${xrayrname} -d -v /opt/xrayr/config_${xrayrname}.yml:/etc/XrayR/config.yml -v /opt/xrayr/dns_${xrayrname}.json:/etc/XrayR/dns.json --network=host crackair/xrayr:latest
     docker ps | grep -wq "xrayr_${xrayrname}"
@@ -291,19 +295,19 @@ if [[ x"${nodetype}" == xV2ray ]] || [[ x"${nodetype}" == xTrojan ]]; then
         echo -e "${yellow}申请证书域名：${certdomain}${plain}"
     fi
     if [[ x"${certmode}" == x"dns" ]]; then
-        if [[ x"${provider}" == x"alidns" ]]; then
+        if [[ x"${provider}" != x ]]; then
             echo -e "${yellow}DNS解析提供商：${provider}${plain}"
         fi
         if [[ x"${dnsenv1}" == x"ALICLOUD_ACCESS_KEY: aaa" ]]; then
             echo -e "${red}未输入 -e 选项，请重新运行${plain}"
             exit 1
         else
-            echo -e "${yellow}DNS证书需要的环境变量1：${provider}${plain}"
+            echo -e "${yellow}DNS证书需要的环境变量1：${dnsenv1}${plain}"
         fi
         if [[ x"${dnsenv2}" == x"ALICLOUD_SECRET_KEY: bbb" ]]; then
-            echo -e "${red}未输入 -n 选项，请确认${plain}"
+            echo -e "${yellow}未输入 -n 选项，请确认${plain}"
         else
-            echo -e "${yellow}DNS证书需要的环境变量2：${provider}${plain}"
+            echo -e "${yellow}DNS证书需要的环境变量2：${dnsenv2}${plain}"
         fi
     fi
 fi

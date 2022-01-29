@@ -124,7 +124,7 @@ install_XrayR() {
     sed -i "s/Provider: alidns/Provider: ${provider}/" /opt/xrayr/config_${xrayrname}.yml
     sed -i "s/ALICLOUD_ACCESS_KEY: aaa/${dnsenv1}/" /opt/xrayr/config_${xrayrname}.yml
     if [[ x"${dnsenv2}" == x"ALICLOUD_SECRET_KEY: bbb" ]]; then
-        sed -i "s/ALICLOUD_SECRET_KEY: bbb/d" /opt/xrayr/config_${xrayrname}.yml
+        sed -i "/ALICLOUD_SECRET_KEY: bbb/d" /opt/xrayr/config_${xrayrname}.yml
     else
         sed -i "s/ALICLOUD_SECRET_KEY: bbb/${dnsenv2}/" /opt/xrayr/config_${xrayrname}.yml
     fi

@@ -114,6 +114,7 @@ install_XrayR() {
         echo -e "${red}下载失败，请确保你的服务器能够下载 Github 的文件${plain}"
         exit 1
     fi
+    sed -i "s/Level: warning/Level: none/" /opt/xrayr/config_${xrayrname}.yml
     sed -i "s/\"SSpanel\"/\"${paneltype}\"/" /opt/xrayr/config_${xrayrname}.yml
     sed -i "s?http://127.0.0.1:667?${apihost}?" /opt/xrayr/config_${xrayrname}.yml
     sed -i "s/123/${apikey}/" /opt/xrayr/config_${xrayrname}.yml

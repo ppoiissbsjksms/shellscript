@@ -77,10 +77,10 @@ install(){
             fi
         elif [[ x"${release}" == x"ubuntu" ]]; then
             apt update -y
-            apt install -y vim wget curl lrzsz tar lsof nmap dnsutils nload iperf3 screen cron openssl libsodium-dev libgnutls30 ca-certificates systemd python-devel python-pip python3-devel python3-pip
+            apt install -y vim wget curl lrzsz tar lsof nmap dnsutils nload iperf3 screen cron openssl libsodium-dev libgnutls30 ca-certificates systemd python-dev python-pip python3-dev python3-pip
         elif [[ x"${release}" == x"debian" ]]; then
             apt update -y
-            apt install -y vim wget curl lrzsz tar lsof nmap dnsutils nload iperf3 screen cron openssl libsodium-dev libgnutls30 ca-certificates systemd python-devel python-pip python3-devel python3-pip
+            apt install -y vim wget curl lrzsz tar lsof nmap dnsutils nload iperf3 screen cron openssl libsodium-dev libgnutls30 ca-certificates systemd python-dev python-pip python3-dev python3-pip
         fi
         echo -e "${green}完成${plain}"
 }

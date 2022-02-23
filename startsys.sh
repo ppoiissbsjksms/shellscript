@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #Uses: 适用于centos7/8 debian ubuntu
-#date: 2021-12-30
-#前仅为个人使用，请谨慎用于生产环境
+#date: 2022-02-23
+#目前为个人使用，请谨慎用于生产环境
 
 red='\033[0;31m'
 green='\033[0;32m'
@@ -459,6 +459,21 @@ set_readlines(){
     echo -e "${green}完成${plain}"
 }
 
+#CentoS增加virtio-blk和xen-blkfront外置驱动
+set_drivers(){
+    if [[ x"${release}" == x"centos" ]]; then
+        echo -e "${yellow}优化外置驱动${plain}"
+        if [ ! -e /etc/dracut.conf.d/virt-drivers.conf ];then
+            echo 'add_drivers+="xen-blkfront virtio_blk"' >> /etc/dracut.conf.d/virt-drivers.conf
+        else
+            if ! grep -wq "xen-blkfront" /etc/dracut.conf.d/virt-drivers.conf;then
+                echo 'add_drivers+="xen-blkfront virtio_blk"' >> /etc/dracut.conf.d/virt-drivers.conf
+            fi
+        fi
+        echo -e "${green}完成${plain}"
+    fi
+}
+
 #个性化登录展示
 set_welcome(){
     echo -e "${yellow}个性化登录展示${plain}"
@@ -477,8 +492,9 @@ main(){
     set_entropy
     set_vimserver
     set_journal
-    set_welcome
     set_readlines
+    set_drivers
+    set_welcome
 }
 main
 

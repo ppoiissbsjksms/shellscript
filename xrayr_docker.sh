@@ -254,61 +254,61 @@ if [[ x"${apihost}" == x"www.domain.com" ]]; then
     echo -e "${red}未输入 -w 选项，请重新运行${plain}"
     exit 1
 else
-    echo -e "${yellow}前端面板地址：${apihost}${plain}"
+    echo -e "${green}前端面板地址：${apihost}${plain}"
 fi
 if [[ x"${paneltype}" == x ]]; then
-    echo -e "${red}前端面板类型：SSpanel (未指定默认使用该值)${plain}"
+    echo -e "${yellow}前端面板类型：SSpanel (未指定默认使用该值)${plain}"
     paneltype=SSpanel
 else
-    echo -e "${yellow}前端面板类型：${paneltype}${plain}"
+    echo -e "${green}前端面板类型：${paneltype}${plain}"
 fi
 if [[ x"${apikey}" == x"demokey" ]]; then
     echo -e "${red}未输入 -k 选项，请重新运行${plain}"
     exit 1
 else
-    echo -e "${yellow}前端通讯秘钥：${apikey}${plain}"
+    echo -e "${green}前端通讯秘钥：${apikey}${plain}"
 fi
 if [[ x"${nodeid}" == x"demoid" ]]; then
     echo -e "${red}未输入 -i 选项，请重新运行${plain}"
     exit 1
 else
-    echo -e "${yellow}节点ID：${nodeid}${plain}"
+    echo -e "${green}节点ID：${nodeid}${plain}"
 fi
 if [[ x"${nodetype}" == x ]]; then
-    echo -e "${red}节点类型：V2ray(未指定默认使用该值)${plain}"
+    echo -e "${yellow}节点类型：V2ray(未指定默认使用该值)${plain}"
     nodetype=V2ray
 else
-    echo -e "${yellow}节点类型：${nodetype}${plain}"
+    echo -e "${green}节点类型：${nodetype}${plain}"
 fi
 if [[ x"${nodetype}" == xV2ray ]] || [[ x"${nodetype}" == xTrojan ]]; then
     if [[ x"${certmode}" == x"none" ]]; then
         echo -e "${yellow}获取证书方式：http(未指定默认使用该值)，V2ray未开启tls选项时可以忽略${plain}"
         certmode=http
     else
-        echo -e "${yellow}获取证书方式：${certmode}${plain}"
+        echo -e "${green}获取证书方式：${certmode}${plain}"
     fi
     if [[ x"${certdomain}" == x"cert.domain.com" ]]; then
-        echo -e "${red}未输入 -d 选项，请重新运行，V2ray未开启tls选项时可以忽略${plain}"
+        echo -e "${yellow}未输入 -d 选项，V2ray未开启tls选项时可以忽略${plain}"
         if [[ x"${nodetype}" == xTrojan ]]; then
             exit 1
         fi
     else
-        echo -e "${yellow}申请证书域名：${certdomain}${plain}"
+        echo -e "${green}申请证书域名：${certdomain}${plain}"
     fi
     if [[ x"${certmode}" == x"dns" ]]; then
         if [[ x"${provider}" != x ]]; then
-            echo -e "${yellow}DNS解析提供商：${provider}${plain}"
+            echo -e "${green}DNS解析提供商：${provider}${plain}"
         fi
         if [[ x"${dnsenv1}" == x"ALICLOUD_ACCESS_KEY: aaa" ]]; then
             echo -e "${red}未输入 -e 选项，请重新运行${plain}"
             exit 1
         else
-            echo -e "${yellow}DNS证书需要的环境变量1：${dnsenv1}${plain}"
+            echo -e "${green}DNS证书需要的环境变量1：${dnsenv1}${plain}"
         fi
         if [[ x"${dnsenv2}" == x"ALICLOUD_SECRET_KEY: bbb" ]]; then
             echo -e "${yellow}未输入 -n 选项，请确认${plain}"
         else
-            echo -e "${yellow}DNS证书需要的环境变量2：${dnsenv2}${plain}"
+            echo -e "${green}DNS证书需要的环境变量2：${dnsenv2}${plain}"
         fi
     fi
 fi

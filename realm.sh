@@ -400,7 +400,7 @@ if [[ -z "${remote_addresses}" ]]; then
     echo -e "${Yellow}已取消${Font}"
     before_show_menu
 fi
-if [[ $remote_addresses =~ ^[1-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[1-9]{1,3}$ ]];then
+if [[ $remote_addresses =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]];then
     c=`echo $remote_addresses |cut -d. -f1`
     d=`echo $remote_addresses |cut -d. -f2`
     e=`echo $remote_addresses |cut -d. -f3`

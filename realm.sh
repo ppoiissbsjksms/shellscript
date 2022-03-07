@@ -306,7 +306,7 @@ Start_Realm(){
         sleep 2
         check_status
         if [[ $? == 0 ]]; then
-            print_ok "${Green}x-ui 启动成功${Font}"
+            print_ok "${Green}Realm启动成功${Font}"
         else
             print_error "Realm启动失败，可能是因为启动时间超过了两秒，请稍后查看日志信息"
         fi
@@ -409,9 +409,6 @@ if [[ $remote_addresses =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]];t
         echo -e "${Red}请输入正确格式的IP${plain}"
         before_show_menu
     fi
-else
-    echo -e "${Red}请输入正确格式的IP${plain}"
-    before_show_menu
 fi
 
 read -e -p " 请输入目标端口[1-65535] (支持端口段如100-102，数量要和监听端口相同):" remote_ports

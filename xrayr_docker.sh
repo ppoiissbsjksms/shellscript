@@ -318,7 +318,14 @@ if [[ ! "${nodeid}" =~ ^[0-9]+$ ]]; then
 fi 
 
 echo -e "${green}即将开始安装，取消请按Ctrl+C${plain}"
-sleep 10
+countdown=10
+while [ $countdown -gt 0 ]
+do
+   echo -ne ${yellow}${countdown}${plain}
+   (( countdown-- ))
+   sleep 1
+   echo -ne "\r   \r"
+done
 install_dep
 install_docker
 install_XrayR

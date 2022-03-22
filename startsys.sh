@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #Uses: 适用于centos7/8 debian ubuntu
-#date: 2022-02-23
-#目前为个人使用，请谨慎用于生产环境
+#date: 2022-03-22
+#脚本用于个人测试，请谨慎用于生产环境
 
 red='\033[0;31m'
 green='\033[0;32m'
@@ -56,10 +56,14 @@ fi
 
 GITHUB_RAW_URL="raw.githubusercontent.com"
 GITHUB_URL="github.com"
-if [ -n "$1" ]; then
-    if echo "$1" | grep -qwi "cn"; then
+import_key=0
+if [ -n "$*" ]; then
+    if echo "$*" | grep -qwi "cn"; then
         GITHUB_RAW_URL="raw.fastgit.org"
         GITHUB_URL="hub.fastgit.org"
+    fi
+    if echo "$*" | grep -qwi "k"; then
+        import_key=1
     fi
 fi
 #安装常用软件
@@ -105,18 +109,20 @@ set_securite(){
         fi
         sed -i '/SELINUX/s/enforcing/disabled/' /etc/selinux/config && setenforce 0
     echo -e "${green}完成${plain}"
-    #安全提示：下面一段会添加作者个人的公钥到服务器，请自行修改或删除
-    echo -e "${yellow}检查并添加SSH个人秘钥${plain}"
-        [ -e /root/.ssh ] || mkdir -p /root/.ssh
-        [ -e /root/.ssh/authorized_keys ] || touch /root/.ssh/authorized_keys
-        if [ `grep -c "#pkey20210402" /root/.ssh/authorized_keys` -eq 0 ];then
-            wget -O /tmp/id_rsa_1024.pub https://${GITHUB_RAW_URL}/myxuchangbin/shellscript/master/id_rsa_1024.pub
-            if echo "03533eeb543c816baab80ef55330eca9  /tmp/id_rsa_1024.pub" | md5sum -c; then
-                cat /tmp/id_rsa_1024.pub >> /root/.ssh/authorized_keys
-                echo -e "\n#pkey20210402" >> /root/.ssh/authorized_keys
+    #安全提示：脚本输入k参数，则默认添加作者个人公钥到服务器，请谨慎运行
+    if [[ "${import_key}" == "1" ]]; then
+        echo -e "${yellow}检查并添加作者SSH公钥${plain}"
+            [ -e /root/.ssh ] || mkdir -p /root/.ssh
+            [ -e /root/.ssh/authorized_keys ] || touch /root/.ssh/authorized_keys
+            if [ `grep -c "#pkey20220322" /root/.ssh/authorized_keys` -eq 0 ];then
+                wget -O /tmp/id_rsa_1024.pub https://${GITHUB_RAW_URL}/myxuchangbin/shellscript/master/id_rsa_1024.pub
+                if echo "03533eeb543c816baab80ef55330eca9  /tmp/id_rsa_1024.pub" | md5sum -c; then
+                    cat /tmp/id_rsa_1024.pub >> /root/.ssh/authorized_keys
+                    echo -e "\n#pkey20220322" >> /root/.ssh/authorized_keys
+                fi
+                rm -f /tmp/id_rsa_1024.pub
             fi
-            rm -f /tmp/id_rsa_1024.pub
-        fi
+    fi
     echo -e "${green}完成${plain}"
     echo -e "${yellow}检查系统时区${plain}"
         if [[ x"${release}" == x"centos" ]]; then

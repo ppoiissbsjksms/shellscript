@@ -34,8 +34,8 @@ setcrontask(){
     echo "0 */6 * * * /bin/bash /opt/csm.sh" >>/tmp/csmcrontab.tmp
     crontab /tmp/csmcrontab.tmp
     rm -rf /tmp/csmcrontab.tmp
-    echo -e "${green}默认定时检测：每天6小时检测一次${plain}"
-    echo -e "${green}如需修改请执行命令：crontab -e ${plain}"
+    echo -e "${green}默认检测时间：每隔6小时检测一次${plain}"
+    echo -e "${green}如需时间修改请执行命令：crontab -e ${plain}"
 }
 
 install_csm(){
@@ -54,8 +54,8 @@ install_csm(){
         echo "${apihost}" > /root/.csm.config
         echo "${apikey}" >> /root/.csm.config
         echo "${nodeid}" >> /root/.csm.config
-        /bin/bash /opt/csm.sh
         setcrontask
+        /bin/bash /opt/csm.sh
     }
 
     if [[ -e "/root/.csm.config" ]];then

@@ -419,12 +419,18 @@ fi
 if [[ ! "${remote_ports}" =~ ^[0-9]+$ ]]; then   
     echo -e "${Red}请输入正确的数字格式${plain}"
     before_show_menu
-fi 
+fi
+read -e -p " 请输入备注信息 (可选):" remarks
+if [[ $remarks =~ \/ || $remarks =~ \# ]];then
+    echo -e "${Red}备注信息中不支持字符 "/" ,"#"${plain}"
+    before_show_menu
+fi
     echo && echo -e "—————————————————————————————————————————————
     请检查Realm转发规则配置是否有误 !\n
-    本 地 监 听 端 口    : ${Green}${listening_ports}${Font}
-    目 标 的 地址/IP  : ${Green}${remote_addresses}${Font}
-    目 标 的 端 口    : ${Green}${remote_ports}${Font}
+    本地监听端口 : ${Green}${listening_ports}${Font}
+    目标地址/IP  : ${Green}${remote_addresses}${Font}
+    目标端口     : ${Green}${remote_ports}${Font}
+    备注信息     : ${Green}${remarks}${Font}
 
 —————————————————————————————————————————————\n"
     read -e -p "按任意键继续，如有配置错误请使用 Ctrl+C 退出。" temp
@@ -445,7 +451,7 @@ fi
     else
         python3 -c "import json;j = (json.load(open(\"/opt/realm/config.json\",'r')));j['remote_ports'].append( \"$remote_ports\");print (j['remote_ports']);json.dump(j,open(\"/opt/realm/config.json\",'w'))" && echo -e "${Info} 配置更新成功"
     fi
-    echo $listening_ports"/"$remote_addresses"#"$remote_ports >> $raw_conf_path
+    echo $listening_ports"/"$remote_addresses"#"$remote_ports"/"$remarks >> $raw_conf_path
 }
 
 localport_conf(){
@@ -495,9 +501,11 @@ eachconf_retrieve()
 {
     a=${trans_conf}
     b=${a#*/}
-    listening_ports=${trans_conf%/*}
+    c=${a%/*}
+    listening_ports=${c%/*}
     remote_addresses=${b%#*}
-    remote_ports=${trans_conf#*#}
+    remote_ports=${c#*#}
+    remarks=${trans_conf##*/}
 }
 
 #添加Realm转发规则
@@ -512,7 +520,7 @@ start_menu
 Check_Realm(){
     echo -e "                      Realm 配置                        "
     echo -e "--------------------------------------------------------"
-    echo -e "序号|本地端口\t|目标地址:目标端口"
+    echo -e "序号|本地端口\t|目标地址:端口\t|备注信息"
     echo -e "--------------------------------------------------------"
 
     count_line=$(awk 'END{print NR}' $raw_conf_path)
@@ -520,7 +528,7 @@ Check_Realm(){
     do
         trans_conf=$(sed -n "${i}p" $raw_conf_path)
         eachconf_retrieve
-        echo -e " $i  |  $listening_ports\t|$remote_addresses:$remote_ports"
+        echo -e " $i  |  $listening_ports\t|$remote_addresses:$remote_ports\t|$remarks"
         echo -e "--------------------------------------------------------"
     done
 read -p "输入任意键按回车返回主菜单"
@@ -531,7 +539,7 @@ start_menu
 Delete_Realm(){
     echo -e "                      Realm 配置                        "
     echo -e "--------------------------------------------------------"
-    echo -e "序号|本地端口\t|目标地址:目标端口"
+    echo -e "序号|本地端口\t|目标地址:端口\t|备注信息"
     echo -e "--------------------------------------------------------"
 
     count_line=$(awk 'END{print NR}' $raw_conf_path)
@@ -539,7 +547,7 @@ Delete_Realm(){
     do
         trans_conf=$(sed -n "${i}p" $raw_conf_path)
         eachconf_retrieve
-        echo -e " $i  |$listening_ports\t|$remote_addresses:$remote_ports"
+        echo -e " $i  |$listening_ports\t|$remote_addresses:$remote_ports\t|$remarks"
         echo -e "--------------------------------------------------------"
     done
 read -p "请输入你要删除的配置序号：" numdelete
@@ -564,7 +572,7 @@ start_menu
 Edit_Realm(){
     echo -e "                      Realm 配置                        "
     echo -e "--------------------------------------------------------"
-    echo -e "序号|本地端口\t|目标地址:目标端口"
+    echo -e "序号|本地端口\t|目标地址:端口\t|备注信息"
     echo -e "--------------------------------------------------------"
 
     count_line=$(awk 'END{print NR}' $raw_conf_path)
@@ -572,7 +580,7 @@ Edit_Realm(){
     do
         trans_conf=$(sed -n "${i}p" $raw_conf_path)
         eachconf_retrieve
-        echo -e " $i  |$listening_ports\t|$remote_addresses:$remote_ports"
+        echo -e " $i  |$listening_ports\t|$remote_addresses:$remote_ports\t|$remarks"
         echo -e "--------------------------------------------------------"
     done
 read -p "请输入你要修改的配置序号：" numedit

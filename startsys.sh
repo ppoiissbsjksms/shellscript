@@ -75,6 +75,7 @@ install(){
                 yum makecache
                 yum -y install epel-release
                 yum -y install vim wget curl zip unzip bash-completion git tree mlocate lrzsz crontabs libsodium tar lsof nmap nload screen nano python-devel python-pip python3-devel python3-pip socat nc ioping mtr bind-utils yum-utils ntpdate gcc gcc-c++ make iftop traceroute net-tools fping vnstat pciutils iperf3 iotop htop sysstat tcpdump bc cmake openssl openssl-devel gnutls ca-certificates systemd sudo
+                update-ca-trust force-enable
             elif [ ${os_version} -eq 8 ]; then
                 dnf -y install epel-release
                 dnf -y install vim wget curl zip unzip bash-completion git tree mlocate lrzsz crontabs libsodium tar lsof nmap nload screen nano python2-devel python2-pip python3-devel python3-pip socat nc ioping mtr bind-utils yum-utils gcc gcc-c++ make iftop traceroute net-tools fping vnstat pciutils iperf3 iotop htop sysstat tcpdump bc cmake openssl openssl-devel gnutls ca-certificates systemd sudo

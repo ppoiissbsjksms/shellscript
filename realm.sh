@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+clear
+
+#=================================================
+#   System Required: CentOS/Debian/Ubuntu
+#   Description: Realm管理脚本，个人使用，请谨慎运行
+#   Author: https://github.com/myxuchangbin
+#=================================================
+
 stty erase ^?
 
 cd "$(
@@ -28,7 +36,7 @@ realm_conf_path="/opt/realm/config.json"
 raw_conf_path="/opt/realm/rawconf"
 
 # check root
-[[ $EUID -ne 0 ]] && echo -e "${Red}错误：${Font} 必须使用root用户运行此脚本！\n" && exit 1
+[[ $EUID -ne 0 ]] && echo -e "${Red}错误：${Font} 当前非ROOT账号，无法继续操作，请更换ROOT账号！\n" && exit 1
 
 # check os
 if [[ -f /etc/redhat-release ]]; then
@@ -112,10 +120,22 @@ before_show_menu() {
     start_menu
 }
 
+Installation_dependency() {
+    echo -e "${Info} 开始安装依赖..."
+    if [[ ${release} == "centos" ]]; then
+        yum install epel-release -y
+        yum install gzip wget curl unzip jq -y
+    else
+        apt-get update && apt-get install gzip wget curl unzip jq -y
+    fi
+    \cp -f /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+    echo -e "${Info} 依赖安装完毕..."
+}
+
 #检测是否安装Realm
 # 0: running, 1: not running, 2: not installed
 check_status() {
-    if [[ ! -f /etc/systemd/system/realm.service ]]; then
+    if test ! -e /opt/realm/realm -a ! -e /etc/systemd/system/realm.service -a ! -e /opt/realm/config.json; then
         return 2
     fi
     temp=$(systemctl status realm | grep Active | awk '{print $3}' | cut -d "(" -f2 | cut -d ")" -f1)
@@ -184,16 +204,44 @@ show_enable_status() {
     fi
 }
 
+Write_config() {
+echo '
+{
+  "log": {
+    "level": "off",
+    "output": "/opt/realm/realm.log"
+  },
+  "dns": {
+    "mode": "ipv4_then_ipv6",
+    "protocol": "tcp_and_udp",
+    "nameservers": [
+      "8.8.8.8:53",
+      "8.8.4.4:53"
+    ],
+    "min_ttl": 0,
+    "max_ttl": 3600,
+    "cache_size": 256
+  },
+  "network": {
+    "use_udp": true,
+    "zero_copy": true,
+    "fast_open": false,
+    "tcp_timeout": 300,
+    "udp_timeout": 30,
+    "send_proxy": false,
+    "send_proxy_version": 2,
+    "accept_proxy": false,
+    "accept_proxy_timeout": 5
+  },
+  "endpoints": [
+  ]
+}' > /opt/realm/config.json
+}
+
 #安装Realm
 Install_Realm(){
   check_uninstall
-  if [[ x"${release}" == x"centos" ]]; then
-    yum install python3 -y
-  elif [[ x"${release}" == x"ubuntu" ]]; then
-    apt-get install python3 -y
-  elif [[ x"${release}" == x"debian" ]]; then
-    apt-get install python3 -y
-  fi
+  Installation_dependency
   [ -e /opt/realm/ ] || mkdir -p /opt/realm/
   echo -e "######################################################"
   echo -e "#    请选择下载点:  1.国外   2.国内                  #"
@@ -201,21 +249,16 @@ Install_Realm(){
   read -p "请选择(默认国外): " download
   [[ -z ${download} ]] && download="1"
   if [[ ${download} == [2] ]]; then
-      wget -N --no-check-certificate -O /opt/realm/realm https://ghproxy.com/https://github.com/zhboner/realm/releases/download/v1.4/realm && chmod +x /opt/realm/realm
+      URL="https://ghproxy.com/https://github.com$(wget -qO- "https://ghproxy.com/https://github.com/zhboner/realm/releases/latest" | grep -E "href=.*realm-x86_64-unknown-linux-musl.tar.gz" | awk -F "\"" '{print $2}')"
   elif [[ ${download} == [1] ]]; then
-      URL="$(wget -qO- https://api.github.com/repos/zhboner/realm/releases/latest | grep -E "browser_download_url.*realm" | cut -f4 -d\")"    
-      wget -N --no-check-certificate -O /opt/realm/realm ${URL} && chmod +x /opt/realm/realm
+      URL="$(wget -qO- https://api.github.com/repos/zhboner/realm/releases/latest | grep -E "browser_download_url.*realm-x86_64-unknown-linux-musl.tar.gz" | cut -f4 -d\")"    
   else
       print_error "输入错误，请重新输入！"
       before_show_menu
   fi
-echo '
-{
-    "listening_addresses": ["0.0.0.0"],
-    "listening_ports": [],
-    "remote_addresses": [],
-    "remote_ports": []
-} ' > /opt/realm/config.json
+  wget -N --no-check-certificate -O /tmp/realm-x86_64-unknown-linux-musl.tar.gz ${URL} && tar -xvf /tmp/realm-x86_64-unknown-linux-musl.tar.gz && chmod +x /tmp/realm && mv -f /tmp/realm /opt/realm/realm
+  rm -f /tmp/realm-x86_64-unknown-linux-musl.tar.gz
+  Write_config
 echo '
 [Unit]
 Description=Realm
@@ -249,7 +292,7 @@ WantedBy=multi-user.target' > /etc/systemd/system/realm.service
 
 #更新realm
 Update_Realm(){
-    confirm "本功能会强制重装当前最新版，数据不会丢失，是否继续?" "n"
+    confirm "本功能会强制安装最新版，数据不会丢失，是否继续?" "n"
     if [[ $? != 0 ]]; then
         echo -e "${red}已取消${plain}"
         before_show_menu
@@ -262,14 +305,15 @@ Update_Realm(){
     read -p "请选择(默认国外): " download
     [[ -z ${download} ]] && download="1"
     if [[ ${download} == [2] ]]; then
-        wget -N --no-check-certificate -O /opt/realm/realm https://ghproxy.com/https://github.com/zhboner/realm/releases/download/v1.4/realm && chmod +x /opt/realm/realm
+        URL="https://ghproxy.com/https://github.com$(wget -qO- "https://ghproxy.com/https://github.com/zhboner/realm/releases/latest" | grep -E "href=.*realm-x86_64-unknown-linux-musl.tar.gz" | awk -F "\"" '{print $2}')"
     elif [[ ${download} == [1] ]]; then
-        URL="$(wget -qO- https://api.github.com/repos/zhboner/realm/releases/latest | grep -E "browser_download_url.*realm" | cut -f4 -d\")"    
-        wget -N --no-check-certificate -O /opt/realm/realm ${URL} && chmod +x /opt/realm/realm
+        URL="$(wget -qO- https://api.github.com/repos/zhboner/realm/releases/latest | grep -E "browser_download_url.*realm-x86_64-unknown-linux-musl.tar.gz" | cut -f4 -d\")"    
     else
-      print_error "输入错误，请重新输入！"
-      before_show_menu
+        print_error "输入错误，请重新输入！"
+        before_show_menu
     fi
+    wget -N --no-check-certificate -O /tmp/realm-x86_64-unknown-linux-musl.tar.gz ${URL} && tar -xvf /tmp/realm-x86_64-unknown-linux-musl.tar.gz && chmod +x /tmp/realm && mv -f /tmp/realm /opt/realm/realm
+    rm -f /tmp/realm-x86_64-unknown-linux-musl.tar.gz
     systemctl restart realm
     check_status
     if [[ $? == 0 ]]; then
@@ -280,19 +324,26 @@ Update_Realm(){
 
 #卸载Realm
 Uninstall_Realm(){
-    check_install
-    confirm "确定要卸载Realm吗?" "n"
-    if [[ $? != 0 ]]; then
-        start_menu
-        return 0
+    if test -a /opt/realm/realm -a /etc/systemd/system/realm.service -a /opt/realm/config.json;then
+        check_install
+        confirm "确定要卸载Realm吗?" "n"
+        if [[ $? != 0 ]]; then
+            start_menu
+            return 0
+        fi
+        systemctl stop realm
+        systemctl disable realm
+        rm -rf /opt/realm/realm /opt/realm/config.json /etc/systemd/system/realm.service
+        systemctl daemon-reload
+        systemctl reset-failed
+        print_ok "Realm卸载成功"
+        sleep 3s
+        before_show_menu
+    else
+        print_error "Realm没有安装，无需卸载"
+        sleep 3s
+        before_show_menu
     fi
-    systemctl stop realm
-    systemctl disable realm
-    rm -rf /opt/realm/realm /opt/realm/config.json /etc/systemd/system/realm.service
-    systemctl daemon-reload
-    systemctl reset-failed
-    print_ok "Realm卸载成功"
-    before_show_menu
 }
 #启动Realm
 Start_Realm(){
@@ -300,7 +351,7 @@ Start_Realm(){
     check_status
     if [[ $? == 0 ]]; then
         echo ""
-        print_ok "Realm已运行，无需再次启动，如需重启请选择重启"
+        print_ok "Realm正在运行"
     else
         systemctl start realm
         sleep 2
@@ -308,7 +359,7 @@ Start_Realm(){
         if [[ $? == 0 ]]; then
             print_ok "${Green}Realm启动成功${Font}"
         else
-            print_error "Realm启动失败，可能是因为启动时间超过了两秒，请稍后查看日志信息"
+            print_error "Realm启动失败，请稍后查看日志信息"
         fi
     fi
     before_show_menu
@@ -328,7 +379,7 @@ Stop_Realm(){
         if [[ $? == 1 ]]; then
             print_ok "Realm停止成功"
         else
-            print_error "Realm停止失败，可能是因为停止时间超过了两秒，请稍后查看日志信息"
+            print_error "Realm停止失败，请稍后查看日志信息"
         fi
     fi
     before_show_menu
@@ -337,13 +388,13 @@ Stop_Realm(){
 #重启Realm
 Restart_Realm(){
     check_install
-    systemctl restart realm
+    $(systemctl restart realm)
     sleep 2
     check_status
     if [[ $? == 0 ]]; then
         print_ok "Realm重启成功"
     else
-        print_error "Realm重启失败，可能是因为启动时间超过了两秒，请稍后查看日志信息"
+        print_error "Realm重启失败，请稍后查看日志信息"
     fi
     before_show_menu
 }
@@ -420,92 +471,130 @@ if [[ ! "${remote_ports}" =~ ^[0-9]+$ ]]; then
     echo -e "${Red}请输入正确的数字格式${plain}"
     before_show_menu
 fi
+tunnel_type=n
+confirm "是否使用隧道转发？" "n"
+if [[ $? == 0 ]]; then
+    read -e -p " 请输入隧道类型（默认：s，客户端填 c，服务端填 s ）:" tunnel_type
+    if [[ -z "${tunnel_type}" ]]; then
+        tunnel_type=s
+    fi
+    read -e -p " 请输入隧道转发模式（客户端和服务器必须保持一致，默认：ws ，可选：ws tls wss）:" tunnel_mode
+    if [[ -z "${tunnel_mode}" ]]; then
+        tunnel_mode=ws
+    fi
+    if [[ "${tunnel_mode}" == ws || "${tunnel_mode}" == wss ]]; then
+        read -e -p " 请输入伪装host（客户端和服务器必须保持一致，默认：apps.bdimg.com）:" tunnel_host
+        if [[ -z "${tunnel_host}" ]]; then
+            tunnel_host=apps.bdimg.com
+        fi
+        read -e -p " 请输入伪装path（客户端和服务器必须保持一致，默认：/ws）:" tunnel_path
+        if [[ -z "${tunnel_path}" ]]; then
+            tunnel_path=/ws
+        fi
+    fi
+    if [[ "${tunnel_mode}" == tls || "${tunnel_mode}" == wss ]]; then
+        read -e -p " 请输入伪装path（客户端和服务器必须保持一致，默认：apps.bdimg.com）:" tunnel_sni
+        if [[ -z "${tunnel_sni}" ]]; then
+            tunnel_sni=apps.bdimg.com
+        fi
+    fi
+
+fi
 read -e -p " 请输入备注信息 (可选):" remarks
 if [[ $remarks =~ \/ || $remarks =~ \# ]];then
     echo -e "${Red}备注信息中不支持字符 "/" ,"#"${plain}"
     before_show_menu
 fi
-    echo && echo -e "—————————————————————————————————————————————
-    请检查Realm转发规则配置是否有误 !\n
-    本地监听端口 : ${Green}${listening_ports}${Font}
-    目标地址/IP  : ${Green}${remote_addresses}${Font}
-    目标端口     : ${Green}${remote_ports}${Font}
-    备注信息     : ${Green}${remarks}${Font}
+    echo ""
+    echo -e "—————————————————————————————————————————————"
+    echo -e "请检查Realm转发规则配置是否有误 !\n"
+    echo -e "本地监听端口 : ${Green}${listening_ports}${Font}"
+    echo -e "目标地址     : ${Green}${remote_addresses}${Font}"
+    echo -e "目标端口     : ${Green}${remote_ports}${Font}"
+    if [[ "${tunnel_type}" != n ]]; then
+        echo -e "隧道类型     : ${Green}${tunnel_type}${Font}"
+        echo -e "转发模式     : ${Green}${tunnel_mode}${Font}"
+        if [[ "${tunnel_mode}" == ws || "${tunnel_mode}" == wss ]]; then
+            echo -e "伪装host     : ${Green}${tunnel_host}${Font}"
+            echo -e "伪装path     : ${Green}${tunnel_path}${Font}"
+        fi
+        if [[ "${tunnel_mode}" == tls || "${tunnel_mode}" == wss ]]; then
+            echo -e "伪装sni     : ${Green}${tunnel_sni}${Font}"
+        fi
+    fi
+    echo -e "备注信息     : ${Green}${remarks}${Font}"
+    echo -e "—————————————————————————————————————————————\n"
 
-—————————————————————————————————————————————\n"
     read -e -p "按任意键继续，如有配置错误请使用 Ctrl+C 退出。" temp
-    if [ `grep -c "listening_ports" /opt/realm/config.json` -eq '0' ]; then
-        python3 -c "import json;j = (json.load(open(\"/opt/realm/config.json\",'r')));a = {'listening_ports':['$listening_ports']};j.update(a);print (j['listening_ports']);json.dump(j,open(\"/opt/realm/config.json\",'w'))" && echo -e "${Info} 配置更新成功"
+    if [[ "${tunnel_type}" == n ]]; then
+        JSON='{"listen":"0.0.0.0:listening_ports","remote":"remote_addresses:remote_ports"}'
+        JSON=${JSON/listening_ports/$listening_ports}
+        JSON=${JSON/remote_addresses/$remote_addresses}
+        JSON=${JSON/remote_ports/$remote_ports}
+        temp=$(jq --argjson data $JSON '.endpoints += [$data]' $realm_conf_path)
+        echo $temp >$realm_conf_path
     else
-        python3 -c "import json;j = (json.load(open(\"/opt/realm/config.json\",'r')));j['listening_ports'].append( \"$listening_ports\");print (j['listening_ports']);json.dump(j,open(\"/opt/realm/config.json\",'w'))" && echo -e "${Info} 配置更新成功"
-    fi
-    
-    if [ `grep -c "remote_addresses" /opt/realm/config.json` -eq '0' ]; then
-        python3 -c "import json;j = (json.load(open(\"/opt/realm/config.json\",'r')));a = {'remote_addresses':['$remote_addresses']};j.update(a);print (j['remote_addresses']);json.dump(j,open(\"/opt/realm/config.json\",'w'))" && echo -e "${Info} 配置更新成功"
-    else
-        python3 -c "import json;j = (json.load(open(\"/opt/realm/config.json\",'r')));j['remote_addresses'].append( \"$remote_addresses\");print (j['remote_addresses']);json.dump(j,open(\"/opt/realm/config.json\",'w'))" && echo -e "${Info} 配置更新成功"
-    fi
-
-    if [ `grep -c "remote_ports" /opt/realm/config.json` -eq '0' ]; then
-        python3 -c "import json;j = (json.load(open(\"/opt/realm/config.json\",'r')));a = {'remote_ports':['$remote_ports']};j.update(a);print (j['remote_ports']);json.dump(j,open(\"/opt/realm/config.json\",'w'))" && echo -e "${Info} 配置更新成功"
-    else
-        python3 -c "import json;j = (json.load(open(\"/opt/realm/config.json\",'r')));j['remote_ports'].append( \"$remote_ports\");print (j['remote_ports']);json.dump(j,open(\"/opt/realm/config.json\",'w'))" && echo -e "${Info} 配置更新成功"
-    fi
-    echo $listening_ports"/"$remote_addresses"#"$remote_ports"/"$remarks >> $raw_conf_path
-}
-
-localport_conf(){
-    count_line=$(awk 'END{print NR}' $raw_conf_path)
-    for((i=1;i<=$count_line;i++))
-    do
-        trans_conf=$(sed -n "${i}p" $raw_conf_path)
-        eachconf_retrieve
-        if [ `grep -c "listening_ports" /opt/realm/config.json` -eq '0' ]; then
-            python3 -c "import json;j = (json.load(open(\"/opt/realm/config.json\",'r')));a = {'listening_ports':['$listening_ports']};j.update(a);print (j['listening_ports']);json.dump(j,open(\"/opt/realm/config.json\",'w'))" && echo -e "${Info} 配置更新成功"
-        else
-            python3 -c "import json;j = (json.load(open(\"/opt/realm/config.json\",'r')));j['listening_ports'].append( \"$listening_ports\");print (j['listening_ports']);json.dump(j,open(\"/opt/realm/config.json\",'w'))" && echo -e "${Info} 配置更新成功"
+        if [[ "${tunnel_mode}" == ws ]]; then
+            JSON='{"listen":"0.0.0.0:listening_ports","remote":"remote_addresses:remote_ports","tunnel_type":"ws;host=example.com;path=/chat"}'
+            JSON=${JSON/listening_ports/$listening_ports}
+            JSON=${JSON/remote_addresses/$remote_addresses}
+            JSON=${JSON/remote_ports/$remote_ports}
+            if [[ "${tunnel_type}" == c ]]; then
+                JSON=${JSON/tunnel_type/remote_transport}
+            else
+                JSON=${JSON/tunnel_type/listen_transport}
+            fi
+            JSON=${JSON/example.com/$tunnel_host}
+            JSON=${JSON/\/chat/$tunnel_path}
+            temp=$(jq --argjson data $JSON '.endpoints += [$data]' $realm_conf_path)
+            echo $temp >$realm_conf_path
+        elif [[ "${tunnel_mode}" == tls ]]; then
+            JSON='{"listen":"0.0.0.0:listening_ports","remote":"remote_addresses:remote_ports","tunnel_type":"tls;sni=domain.com;servername=domain.com"}'
+            JSON=${JSON/listening_ports/$listening_ports}
+            JSON=${JSON/remote_addresses/$remote_addresses}
+            JSON=${JSON/remote_ports/$remote_ports}
+            if [[ "${tunnel_type}" == c ]]; then
+                JSON=${JSON/tunnel_type/remote_transport}
+            else
+                JSON=${JSON/tunnel_type/listen_transport}
+            fi
+            JSON=${JSON/domain.com/$tunnel_sni}
+            temp=$(jq --argjson data $JSON '.endpoints += [$data]' $realm_conf_path)
+            echo $temp >$realm_conf_path
+        elif [[ "${tunnel_mode}" == wss ]]; then
+            JSON='{"listen":"0.0.0.0:listening_ports","remote":"remote_addresses:remote_ports","tunnel_type":"ws;host=example.com;path=/chat;tls;sni=domain.com;servername=domain.com"}'
+            JSON=${JSON/listening_ports/$listening_ports}
+            JSON=${JSON/remote_addresses/$remote_addresses}
+            JSON=${JSON/remote_ports/$remote_ports}
+            if [[ "${tunnel_type}" == c ]]; then
+                JSON=${JSON/tunnel_type/remote_transport}
+            else
+                JSON=${JSON/tunnel_type/listen_transport}
+            fi
+            JSON=${JSON/example.com/$tunnel_host}
+            JSON=${JSON/\/chat/$tunnel_path}
+            JSON=${JSON/domain.com/$tunnel_sni}
+            temp=$(jq --argjson data $JSON '.endpoints += [$data]' $realm_conf_path)
+            echo $temp >$realm_conf_path
         fi
-    done
-}
-
-addresses_conf(){
-    count_line=$(awk 'END{print NR}' $raw_conf_path)
-    for((i=1;i<=$count_line;i++))
-    do
-        trans_conf=$(sed -n "${i}p" $raw_conf_path)
-        eachconf_retrieve
-        if [ `grep -c "remote_addresses" /opt/realm/config.json` -eq '0' ]; then
-            python3 -c "import json;j = (json.load(open(\"/opt/realm/config.json\",'r')));a = {'remote_addresses':['$remote_addresses']};j.update(a);print (j['remote_addresses']);json.dump(j,open(\"/opt/realm/config.json\",'w'))" && echo -e "${Info} 配置更新成功"
-        else
-            python3 -c "import json;j = (json.load(open(\"/opt/realm/config.json\",'r')));j['remote_addresses'].append( \"$remote_addresses\");print (j['remote_addresses']);json.dump(j,open(\"/opt/realm/config.json\",'w'))" && echo -e "${Info} 配置更新成功"
-        fi
-    done
-}
-
-remoteport_conf(){
-    count_line=$(awk 'END{print NR}' $raw_conf_path)
-    for((i=1;i<=$count_line;i++))
-    do
-        trans_conf=$(sed -n "${i}p" $raw_conf_path)
-        eachconf_retrieve
-        if [ `grep -c "remote_ports" /opt/realm/config.json` -eq '0' ]; then
-            python3 -c "import json;j = (json.load(open(\"/opt/realm/config.json\",'r')));a = {'remote_ports':['$remote_ports']};j.update(a);print (j['remote_ports']);json.dump(j,open(\"/opt/realm/config.json\",'w'))" && echo -e "${Info} 配置更新成功"
-        else
-            python3 -c "import json;j = (json.load(open(\"/opt/realm/config.json\",'r')));j['remote_ports'].append( \"$remote_ports\");print (j['remote_ports']);json.dump(j,open(\"/opt/realm/config.json\",'w'))" && echo -e "${Info} 配置更新成功"
-        fi    
-    done
+    fi
+    echo $listening_ports"#"$remote_addresses"#"$remote_ports"#"$tunnel_type"#"$tunnel_mode"#"$tunnel_host"#"$tunnel_path"#"$tunnel_sni"#"$remarks >> $raw_conf_path
+    Restart_Realm
 }
 
 #赋值
 eachconf_retrieve()
 {
     a=${trans_conf}
-    b=${a#*/}
-    c=${a%/*}
-    listening_ports=${c%/*}
-    remote_addresses=${b%#*}
-    remote_ports=${c#*#}
-    remarks=${trans_conf##*/}
+    listening_ports=`echo ${a} | awk -F "#" '{print $1}'`
+    remote_addresses=`echo ${a} | awk -F "#" '{print $2}'`
+    remote_ports=`echo ${a} | awk -F "#" '{print $3}'`
+    tunnel_type=`echo ${a} | awk -F "#" '{print $4}'`
+    tunnel_mode=`echo ${a} | awk -F "#" '{print $5}'`
+    tunnel_host=`echo ${a} | awk -F "#" '{print $6}'`
+    tunnel_path=`echo ${a} | awk -F "#" '{print $7}'`
+    tunnel_sni=`echo ${a} | awk -F "#" '{print $8}'`
+    remarks=`echo ${a} | awk -F "#" '{print $9}'`
 }
 
 #添加Realm转发规则
@@ -520,7 +609,7 @@ start_menu
 Check_Realm(){
     echo -e "                      Realm 配置                        "
     echo -e "--------------------------------------------------------"
-    echo -e "序号|本地端口\t|目标地址:端口\t|备注信息"
+    echo -e "序号|方法\t|本地端口\t|目标地址:端口\t|备注信息"
     echo -e "--------------------------------------------------------"
 
     count_line=$(awk 'END{print NR}' $raw_conf_path)
@@ -528,7 +617,14 @@ Check_Realm(){
     do
         trans_conf=$(sed -n "${i}p" $raw_conf_path)
         eachconf_retrieve
-        echo -e " $i  |  $listening_ports\t|$remote_addresses:$remote_ports\t|$remarks"
+        if [ "$tunnel_type" == "n" ]; then
+            str="端口转发"
+        elif [ "$tunnel_type" == "c" ]; then
+            str="隧道转发"
+        elif [ "$tunnel_type" == "s" ]; then
+            str="隧道接收"
+        fi
+        echo -e " $i  |$str |$listening_ports\t|$remote_addresses:$remote_ports\t|$remarks"
         echo -e "--------------------------------------------------------"
     done
 read -p "输入任意键按回车返回主菜单"
@@ -539,7 +635,7 @@ start_menu
 Delete_Realm(){
     echo -e "                      Realm 配置                        "
     echo -e "--------------------------------------------------------"
-    echo -e "序号|本地端口\t|目标地址:端口\t|备注信息"
+    echo -e "序号|方法\t|本地端口\t|目标地址:端口\t|备注信息"
     echo -e "--------------------------------------------------------"
 
     count_line=$(awk 'END{print NR}' $raw_conf_path)
@@ -547,32 +643,38 @@ Delete_Realm(){
     do
         trans_conf=$(sed -n "${i}p" $raw_conf_path)
         eachconf_retrieve
-        echo -e " $i  |$listening_ports\t|$remote_addresses:$remote_ports\t|$remarks"
+        if [ "$tunnel_type" == "n" ]; then
+            str="端口转发"
+        elif [ "$tunnel_type" == "c" ]; then
+            str="隧道转发"
+        elif [ "$tunnel_type" == "s" ]; then
+            str="隧道接收"
+        fi
+        echo -e " $i  |$str |$listening_ports\t|$remote_addresses:$remote_ports\t|$remarks"
         echo -e "--------------------------------------------------------"
     done
-read -p "请输入你要删除的配置序号：" numdelete
-trans_conf=$(sed -n "${numdelete}p" $raw_conf_path)
-eachconf_retrieve
-python3 -c "import json;j = (json.load(open(\"/opt/realm/config.json\",'r')));j['listening_ports'].remove( \"$listening_ports\");print (j['listening_ports']);json.dump(j,open(\"/opt/realm/config.json\",'w'))" && echo -e "${Info} 配置更新成功"
-python3 -c "import json;j = (json.load(open(\"/opt/realm/config.json\",'r')));j['remote_addresses'].remove( \"$remote_addresses\");print (j['remote_addresses']);json.dump(j,open(\"/opt/realm/config.json\",'w'))" && echo -e "${Info} 配置更新成功"
-python3 -c "import json;j = (json.load(open(\"/opt/realm/config.json\",'r')));j['remote_ports'].remove( \"$remote_ports\");print (j['remote_ports']);json.dump(j,open(\"/opt/realm/config.json\",'w'))" && echo -e "${Info} 配置更新成功"
-sed -i "${numdelete}d" $raw_conf_path
-systemctl restart realm
-echo -e "------------------${Red_font_prefix}配置已删除,服务已重启${Font_color_suffix}-----------------"
-sleep 2s
-clear
-echo -e "----------------------${Green_font_prefix}当前配置如下${Font_color_suffix}----------------------"
-echo -e "--------------------------------------------------------"
-Check_Realm
-read -p "输入任意键按回车返回主菜单"
-start_menu
+    read -p "请输入你要删除的配置序号：" numdelete
+    sed -i "${numdelete}d" $raw_conf_path
+    nu=${numdelete}-1
+    temp=$(jq 'del(.endpoints['$nu'])' $realm_conf_path)
+    echo $temp >$realm_conf_path
+    clear
+    $(systemctl restart realm)
+    echo -e "------------------${Green_font_prefix}配置已删除,服务已重启${Font_color_suffix}-----------------"
+    sleep 2s
+    clear
+    echo -e "----------------------${Green_font_prefix}当前配置如下${Font_color_suffix}----------------------"
+    echo -e "--------------------------------------------------------"
+    Check_Realm
+    read -p "输入任意键按回车返回主菜单"
+    start_menu
 }
 
 #修改realm规则
 Edit_Realm(){
     echo -e "                      Realm 配置                        "
     echo -e "--------------------------------------------------------"
-    echo -e "序号|本地端口\t|目标地址:端口\t|备注信息"
+    echo -e "序号|方法\t|本地端口\t|目标地址:端口\t|备注信息"
     echo -e "--------------------------------------------------------"
 
     count_line=$(awk 'END{print NR}' $raw_conf_path)
@@ -580,26 +682,27 @@ Edit_Realm(){
     do
         trans_conf=$(sed -n "${i}p" $raw_conf_path)
         eachconf_retrieve
-        echo -e " $i  |$listening_ports\t|$remote_addresses:$remote_ports\t|$remarks"
+        if [ "$tunnel_type" == "n" ]; then
+            str="端口转发"
+        elif [ "$tunnel_type" == "c" ]; then
+            str="隧道转发"
+        elif [ "$tunnel_type" == "s" ]; then
+            str="隧道接收"
+        fi
+        echo -e " $i  |$str |$listening_ports\t|$remote_addresses:$remote_ports\t|$remarks"
         echo -e "--------------------------------------------------------"
     done
-read -p "请输入你要修改的配置序号：" numedit
-Set_Config
-trans_conf=$(sed -n "${numedit}p" $raw_conf_path)
-eachconf_retrieve
-python3 -c "import json;j = (json.load(open(\"/opt/realm/config.json\",'r')));j['listening_ports'].remove( \"$listening_ports\");print (j['listening_ports']);json.dump(j,open(\"/opt/realm/config.json\",'w'))" && echo -e "${Info} 配置更新成功"
-python3 -c "import json;j = (json.load(open(\"/opt/realm/config.json\",'r')));j['remote_addresses'].remove( \"$remote_addresses\");print (j['remote_addresses']);json.dump(j,open(\"/opt/realm/config.json\",'w'))" && echo -e "${Info} 配置更新成功"
-python3 -c "import json;j = (json.load(open(\"/opt/realm/config.json\",'r')));j['remote_ports'].remove( \"$remote_ports\");print (j['remote_ports']);json.dump(j,open(\"/opt/realm/config.json\",'w'))" && echo -e "${Info} 配置更新成功"
-sed -i "${numedit}d" $raw_conf_path
-systemctl restart realm
-echo -e "------------------${Red_font_prefix}配置已修改,服务已重启${Font_color_suffix}-----------------"
-sleep 2s
-clear
-echo -e "----------------------${Green_font_prefix}当前配置如下${Font_color_suffix}----------------------"
-echo -e "--------------------------------------------------------"
-Check_Realm
-read -p "输入任意键按回车返回主菜单"
-start_menu
+    read -p "请输入你要修改的配置序号：" numedit
+    echo -e "------------------${Red_font_prefix}修改功能暂未完善，请删除规则然后添加规则${Font_color_suffix}-----------------"
+    #systemctl restart realm
+    #echo -e "------------------${Red_font_prefix}配置已修改,服务已重启${Font_color_suffix}-----------------"
+    sleep 2s
+    clear
+    echo -e "----------------------${Green_font_prefix}当前配置如下${Font_color_suffix}----------------------"
+    echo -e "--------------------------------------------------------"
+    Check_Realm
+    read -p "输入任意键按回车返回主菜单"
+    start_menu
 }
 
 #更新脚本
@@ -699,30 +802,73 @@ Init_Realm(){
     fi
     rm -rf /opt/realm/rawconf
     rm -rf /opt/realm/config.json
-echo '
-{
-    "listening_addresses": ["0.0.0.0"],
-    "listening_ports": [],
-    "remote_addresses": [],
-    "remote_ports": []
-} ' > /opt/realm/config.json
+    Write_config
     read -p "初始化成功,输入任意键按回车返回主菜单"
     start_menu
 }
 
 #重载Realm配置
 Reload_Realm(){
-  rm -rf /opt/realm/config.json
-echo '
-{
-    "listening_addresses": ["0.0.0.0"],
-    "listening_ports": [],
-    "remote_addresses": [],
-    "remote_ports": []
-} ' > /opt/realm/config.json
-  localport_conf
-  addresses_conf
-  remoteport_conf
+    rm -rf /opt/realm/config.json
+    Write_config
+    count_line=$(awk 'END{print NR}' $raw_conf_path)
+    for((i=1;i<=$count_line;i++))
+    do
+        trans_conf=$(sed -n "${i}p" $raw_conf_path)
+        eachconf_retrieve
+        if [[ "${tunnel_type}" == n ]]; then
+            JSON='{"listen":"0.0.0.0:listening_ports","remote":"remote_addresses:remote_ports"}'
+            JSON=${JSON/listening_ports/$listening_ports}
+            JSON=${JSON/remote_addresses/$remote_addresses}
+            JSON=${JSON/remote_ports/$remote_ports}
+            temp=$(jq --argjson data $JSON '.endpoints += [$data]' $realm_conf_path)
+            echo $temp >$realm_conf_path
+        else
+            if [[ "${tunnel_mode}" == ws ]]; then
+                JSON='{"listen":"0.0.0.0:listening_ports","remote":"remote_addresses:remote_ports","tunnel_type":"ws;host=example.com;path=/chat"}'
+                JSON=${JSON/listening_ports/$listening_ports}
+                JSON=${JSON/remote_addresses/$remote_addresses}
+                JSON=${JSON/remote_ports/$remote_ports}
+                if [[ "${tunnel_type}" == c ]]; then
+                    JSON=${JSON/tunnel_type/remote_transport}
+                else
+                    JSON=${JSON/tunnel_type/listen_transport}
+                fi
+                JSON=${JSON/example.com/$tunnel_host}
+                JSON=${JSON/\/chat/$tunnel_path}
+                temp=$(jq --argjson data $JSON '.endpoints += [$data]' $realm_conf_path)
+                echo $temp >$realm_conf_path
+            elif [[ "${tunnel_mode}" == tls ]]; then
+                JSON='{"listen":"0.0.0.0:listening_ports","remote":"remote_addresses:remote_ports","tunnel_type":"tls;sni=domain.com;servername=domain.com"}'
+                JSON=${JSON/listening_ports/$listening_ports}
+                JSON=${JSON/remote_addresses/$remote_addresses}
+                JSON=${JSON/remote_ports/$remote_ports}
+                if [[ "${tunnel_type}" == c ]]; then
+                    JSON=${JSON/tunnel_type/remote_transport}
+                else
+                    JSON=${JSON/tunnel_type/listen_transport}
+                fi
+                JSON=${JSON/domain.com/$tunnel_sni}
+                temp=$(jq --argjson data $JSON '.endpoints += [$data]' $realm_conf_path)
+                echo $temp >$realm_conf_path
+            elif [[ "${tunnel_mode}" == wss ]]; then
+                JSON='{"listen":"0.0.0.0:listening_ports","remote":"remote_addresses:remote_ports","tunnel_type":"ws;host=example.com;path=/chat;tls;sni=domain.com;servername=domain.com"}'
+                JSON=${JSON/listening_ports/$listening_ports}
+                JSON=${JSON/remote_addresses/$remote_addresses}
+                JSON=${JSON/remote_ports/$remote_ports}
+                if [[ "${tunnel_type}" == c ]]; then
+                    JSON=${JSON/tunnel_type/remote_transport}
+                else
+                    JSON=${JSON/tunnel_type/listen_transport}
+                fi
+                JSON=${JSON/example.com/$tunnel_host}
+                JSON=${JSON/\/chat/$tunnel_path}
+                JSON=${JSON/domain.com/$tunnel_sni}
+                temp=$(jq --argjson data $JSON '.endpoints += [$data]' $realm_conf_path)
+                echo $temp >$realm_conf_path
+            fi
+        fi
+    done
   systemctl restart realm
   read -p "重载配置成功,输入任意键按回车返回主菜单"
   start_menu

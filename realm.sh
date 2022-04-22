@@ -441,7 +441,7 @@ if [[ ! "${listening_ports}" =~ ^[0-9]+$ ]]; then
     echo -e "${Red}请输入正确的数字格式${plain}"
     before_show_menu
 fi
-listening_ports_count=$(cat /opt/realm/rawconf |cut -d\/ -f1 |grep "${listening_ports}" |wc -l)
+listening_ports_count=$(cat /opt/realm/rawconf |cut -d# -f1 |grep "${listening_ports}" |wc -l)
 if [[ "${listening_ports_count}" -eq 1 ]]; then   
     echo -e "${Red}您输入的端口已存在，请换一个端口${plain}"
     before_show_menu

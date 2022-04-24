@@ -256,8 +256,8 @@ Install_Realm(){
       print_error "输入错误，请重新输入！"
       before_show_menu
   fi
-  wget -N --no-check-certificate -O /tmp/realm-x86_64-unknown-linux-musl.tar.gz ${URL} && tar -xvf /tmp/realm-x86_64-unknown-linux-musl.tar.gz && chmod +x /tmp/realm && mv -f /tmp/realm /opt/realm/realm
-  rm -f /tmp/realm-x86_64-unknown-linux-musl.tar.gz
+  wget -N --no-check-certificate -O realm-x86_64-unknown-linux-musl.tar.gz ${URL} && tar -xvf realm-x86_64-unknown-linux-musl.tar.gz && chmod +x realm && mv -f realm /opt/realm/realm
+  rm -rf realm-x86_64-unknown-linux-musl.tar.gz
   Write_config
 echo '
 [Unit]
@@ -312,9 +312,9 @@ Update_Realm(){
         print_error "输入错误，请重新输入！"
         before_show_menu
     fi
-    wget -N --no-check-certificate -O /tmp/realm-x86_64-unknown-linux-musl.tar.gz ${URL} && tar -xvf /tmp/realm-x86_64-unknown-linux-musl.tar.gz && chmod +x /tmp/realm && mv -f /tmp/realm /opt/realm/realm
-    rm -f /tmp/realm-x86_64-unknown-linux-musl.tar.gz
-    systemctl restart realm
+    wget -N --no-check-certificate -O realm-x86_64-unknown-linux-musl.tar.gz ${URL} && tar -xvf realm-x86_64-unknown-linux-musl.tar.gz && chmod +x realm && mv -f realm /opt/realm/realm
+    rm -rf realm-x86_64-unknown-linux-musl.tar.gz
+    $(systemctl restart realm)
     check_status
     if [[ $? == 0 ]]; then
         print_ok "更新完成，已自动重启Realm"

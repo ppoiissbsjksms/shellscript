@@ -432,10 +432,17 @@ Disable_Realm(){
 
 #添加设置
 Set_Config(){
-read -e -p " 请输入本地端口[1-65535] (支持端口段如100-102,数量要和目标端口相同):" listening_ports
+echo -e " 请输入本地监听端口[1-65535] (支持端口段如10000-10002,数量要和目标端口一致)"
+read -e -p " 留空则随机分配[30000-40000]之间一个端口:" listening_ports
 if [[ -z "${listening_ports}" ]]; then
-    echo -e "${Yellow}已取消${Font}"
-    before_show_menu
+    listening_port_temp1=0
+    listening_ports=0
+    while [ $listening_ports == 0 ]; do
+       listening_port_temp1=`shuf -i 30000-40000 -n1`
+       if [ "$(cat /opt/realm/rawconf |cut -d# -f1 |grep "${listening_port_temp1}" |wc -l)" == 0 ] ; then
+              listening_ports=$listening_port_temp1
+       fi
+    done
 fi
 if [[ ! "${listening_ports}" =~ ^[0-9]+$ ]]; then   
     echo -e "${Red}请输入正确的数字格式${plain}"
@@ -462,7 +469,7 @@ if [[ $remote_addresses =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]];t
     fi
 fi
 
-read -e -p " 请输入目标端口[1-65535] (支持端口段如100-102，数量要和监听端口相同):" remote_ports
+read -e -p " 请输入目标端口[1-65535] (支持端口段如10000-10002，数量要和监听端口相同):" remote_ports
 if [[ -z "${remote_ports}" ]]; then
     echo -e "${Yellow}已取消${Font}"
     before_show_menu

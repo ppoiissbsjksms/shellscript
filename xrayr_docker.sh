@@ -108,8 +108,8 @@ install_XrayR() {
         docker rm -f xrayr_${xrayrname}
     fi
     [ -e /opt/xrayr ] || mkdir -p /opt/xrayr/
-    wget -N --no-check-certificate -O /opt/xrayr/config_${xrayrname}.yml https://raw.githubusercontent.com/XrayR-project/XrayR/master/main/config.yml.example
-    wget -N --no-check-certificate -O /opt/xrayr/dns_${xrayrname}.json https://raw.githubusercontent.com/XrayR-project/XrayR/master/main/dns.json
+    wget -N --no-check-certificate -O /opt/xrayr/config_${xrayrname}.yml https://raw.githubusercontent.com/Misaka-blog/XrayR/master/main/config.yml.example
+    wget -N --no-check-certificate -O /opt/xrayr/dns_${xrayrname}.json https://raw.githubusercontent.com/Misaka-blog/XrayR/master/main/dns.json
     if [[ $? -ne 0 ]]; then
         echo -e "${red}下载失败，请确保你的服务器能够下载 Github 的文件${plain}"
         exit 1
@@ -129,8 +129,8 @@ install_XrayR() {
     else
         sed -i "s/ALICLOUD_SECRET_KEY: bbb/${dnsenv2}/" /opt/xrayr/config_${xrayrname}.yml
     fi
-    docker pull crackair/xrayr:latest
-    docker run --restart=always --name xrayr_${xrayrname} -d -v /opt/xrayr/config_${xrayrname}.yml:/etc/XrayR/config.yml -v /opt/xrayr/dns_${xrayrname}.json:/etc/XrayR/dns.json --network=host crackair/xrayr:latest
+    docker pull aiastia/xrayr:master
+    docker run --restart=always --name xrayr_${xrayrname} -d -v /opt/xrayr/config_${xrayrname}.yml:/etc/XrayR/config.yml -v /opt/xrayr/dns_${xrayrname}.json:/etc/XrayR/dns.json --network=host aiastia/xrayr:master
     docker ps | grep -wq "xrayr_${xrayrname}"
     if [[ $? -eq 0 ]]; then
         crontab -l > /tmp/cronconf

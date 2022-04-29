@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 clear
-
 #=================================================
 #   System Required: CentOS/Debian/Ubuntu
 #   Description: Realm管理脚本，个人使用，请谨慎运行
@@ -223,10 +222,9 @@ echo '
     "cache_size": 256
   },
   "network": {
+    "no_tcp": false,
     "use_udp": true,
-    "zero_copy": true,
-    "fast_open": false,
-    "tcp_timeout": 300,
+    "tcp_timeout": 5,
     "udp_timeout": 30,
     "send_proxy": false,
     "send_proxy_version": 2,
@@ -274,6 +272,7 @@ User=root
 Restart=always
 RestartSec=5s
 DynamicUser=yes
+ReadWritePaths=/opt/realm
 WorkingDirectory=/opt/realm
 ExecStart=/opt/realm/realm -c /opt/realm/config.json
 

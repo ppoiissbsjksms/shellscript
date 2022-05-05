@@ -38,7 +38,7 @@ logo[1]="
 
         大部分人都在关注你飞的高不高，却没人在乎你飞的累不累，这就是现实！
             我从不相信梦想，我，只，相，信，自，己！
-                                            -- @xcbin
+                                                    @xcbin
 "
 logo[2]="
        ┏┓ 　┏┓+ +
@@ -110,7 +110,13 @@ logo=${logo[$[$RANDOM % ${#logo[@]} + 1]]}
 # System
 #
 
-system_os=$(grep -w NAME /etc/os-release|awk -F '"' '{printf $2}')
+system_os=$(grep -w PRETTY_NAME /etc/os-release|awk -F '"' '{printf $2}')
+
+#
+# Kernel
+#
+
+kernel_version=$(uname -r)
 
 #
 # Memory
@@ -168,7 +174,7 @@ hostname=${HOSTNAME:-$(hostname)}
 user_num=$(who -u | wc -l)
 
 echo -e "\033[0;36;40m$logo\033[0m"
-echo -e "操作系统: \t$system_os"
+echo -e "操作系统: \t$system_os Kernel-$kernel_version"
 echo -e "系统时间: \t$time_cur"
 echo -e "运行时间: \t$up_time"
 echo -e "系统负载: \t\033[0;33;40m$load_average\033[0m"

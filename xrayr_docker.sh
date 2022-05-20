@@ -129,8 +129,8 @@ install_XrayR() {
     else
         sed -i "s/ALICLOUD_SECRET_KEY: bbb/${dnsenv2}/" /opt/xrayr/config_${xrayrname}.yml
     fi
-    docker pull aiastia/xrayr:latest
-    docker run --restart=always --name xrayr_${xrayrname} -d -v /opt/xrayr/config_${xrayrname}.yml:/etc/XrayR/config.yml -v /opt/xrayr/dns_${xrayrname}.json:/etc/XrayR/dns.json --network=host aiastia/xrayr:latest
+    docker pull misakano7545/xrayr:latest
+    docker run --restart=always --name xrayr_${xrayrname} -d -v /opt/xrayr/config_${xrayrname}.yml:/etc/XrayR/config.yml -v /opt/xrayr/dns_${xrayrname}.json:/etc/XrayR/dns.json --network=host misakano7545/xrayr:latest
     docker ps | grep -wq "xrayr_${xrayrname}"
     if [[ $? -eq 0 ]]; then
         crontab -l > /tmp/cronconf

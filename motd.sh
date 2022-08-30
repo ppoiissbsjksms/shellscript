@@ -3,7 +3,7 @@
 # File Name: motd.sh
 # Author: xcbin
 # Blog: https://www.91linux.org
-# Created Time: 2022.04.18
+# Update Time: 2022.08.30
 #########################################################################
 
 # Don't change! We want predictable outputs
@@ -82,28 +82,7 @@ logo[3]="
  　 　　┃┫┫ ┃┫┫
  　 　　┗┻┛ ┗┻┛
 "
-logo[4]="
-                       .::::.
-                     .::::::::.
-                    :::::::::::
-                 ..:::::::::::'
-              '::::::::::::'
-                .::::::::::
-           '::::::::::::::..
-                ..::::::::::::.
-                ::::::::::::::::
-               ::::'':::::::::'        .:::.
-              ::::'   ':::::'       .::::::::.
-            .::::'      ::::     .:::::::'::::.
-           .:::'       :::::  .:::::::::' ':::::.
-          .::'        :::::.:::::::::'      ':::::.
-         .::'         ::::::::::::::'         ''::::.
-     ...:::           ::::::::::::'              ''::.
-    '''' ':.          ':::::::::'                  ::::..
-                       '.:::::'                    ':'''''..
 
-           女神保佑，永不宕机！
-"
 logo=${logo[$[$RANDOM % ${#logo[@]} + 1]]}
 
 #
@@ -152,7 +131,7 @@ disk_used=$(df -h | grep " /$" | cut -f4 | awk '{printf "%s / %s (%s)", $3, $2, 
 # Time
 #
 
-time_cur=$(date +"%A, %e %B %Y, %r")
+time_cur=$(date "+%F %T %Z %z")
 
 #
 # Uptime
@@ -174,7 +153,8 @@ hostname=${HOSTNAME:-$(hostname)}
 user_num=$(who -u | wc -l)
 
 echo -e "\033[0;36;40m$logo\033[0m"
-echo -e "操作系统: \t$system_os Kernel-$kernel_version"
+echo -e "操作系统: \t$system_os"
+echo -e "内核版本: \t$kernel_version"
 echo -e "系统时间: \t$time_cur"
 echo -e "运行时间: \t$up_time"
 echo -e "系统负载: \t\033[0;33;40m$load_average\033[0m"

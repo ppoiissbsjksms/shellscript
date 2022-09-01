@@ -137,7 +137,7 @@ time_cur=$(date "+%F %T %Z %z")
 # Uptime
 #
 
-up_time=$(uptime | sed 's/,//g' | awk '{ print $3,$4,$5}')
+up_time=$(uptime | awk -F'( |,|:)+' '{d=h=m=0; if ($7=="min") m=$6; else {if ($7~/^day/) {d=$6;h=$8;m=$9} else {h=$6;m=$7}}} {print d+0,"days,",h+0,"hours,",m+0,"minutes"}')
 
 #
 # Username

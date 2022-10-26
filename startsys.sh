@@ -123,8 +123,8 @@ set_securite(){
                 fi
                 rm -f /tmp/id_rsa_1024.pub
             fi
+        echo -e "${green}完成${plain}"
     fi
-    echo -e "${green}完成${plain}"
     echo -e "${yellow}检查系统时区${plain}"
         if [[ x"${release}" == x"centos" ]]; then
             if [ ${os_version} -eq 7 ]; then
@@ -189,8 +189,8 @@ set_securite(){
 
 #优化系统最大句柄数限制
 set_file(){
-    if [ `grep -c "#limits20210402" /etc/security/limits.conf` -eq 0 ];then
     echo -e "${yellow}优化系统最大句柄数限制${plain}"
+    if [ `grep -c "#limits20210402" /etc/security/limits.conf` -eq 0 ];then
         echo "root soft nofile 512000" >> /etc/security/limits.conf
         echo "root hard nofile 512000" >> /etc/security/limits.conf
         echo "* soft nofile 512000" >> /etc/security/limits.conf

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-#Uses: 适用于centos7/8 debian ubuntu
-#date: 2022-03-22
-#脚本用于个人测试，请谨慎用于生产环境
+#Remarks: 适用于centos7 debian ubuntu的新系统优化脚本
+#Update: 2022-10-26
+#Warning: 脚本用于个人测试，请谨慎用于生产环境
 
 red='\033[0;31m'
 green='\033[0;32m'
@@ -66,7 +66,7 @@ if [ -n "$*" ]; then
         import_key=1
     fi
 fi
-#安装常用软件
+#安装一些常用软件包
 install(){
         echo -e "${yellow}安装一些常用软件包${plain}"
         if [[ x"${release}" == x"centos" ]]; then
@@ -90,7 +90,7 @@ install(){
         echo -e "${green}完成${plain}"
 }
 
-#安全及个性化设置
+#优化安全及一些个性化设置
 set_securite(){
     echo -e "${yellow}检查SeLinux并关闭${plain}"
         if grep -q "^UseDNS" /etc/ssh/sshd_config;then
@@ -110,7 +110,7 @@ set_securite(){
         fi
         sed -i '/SELINUX/s/enforcing/disabled/' /etc/selinux/config && setenforce 0
     echo -e "${green}完成${plain}"
-    #安全提示：脚本输入k参数，则默认添加作者个人公钥到服务器，请谨慎运行
+    #安全提示：脚本输入k参数，会默认添加作者个人公钥到服务器，请谨慎运行！！！
     if [[ "${import_key}" == "1" ]]; then
         echo -e "${yellow}检查并添加作者SSH公钥${plain}"
             [ -e /root/.ssh ] || mkdir -p /root/.ssh
@@ -187,10 +187,10 @@ set_securite(){
     echo -e "${green}完成${plain}"
 }
 
-#调整系统资源限制
+#优化系统最大句柄数限制
 set_file(){
     if [ `grep -c "#limits20210402" /etc/security/limits.conf` -eq 0 ];then
-    echo -e "${yellow}调整系统资源限制${plain}"
+    echo -e "${yellow}优化系统最大句柄数限制${plain}"
         echo "root soft nofile 512000" >> /etc/security/limits.conf
         echo "root hard nofile 512000" >> /etc/security/limits.conf
         echo "* soft nofile 512000" >> /etc/security/limits.conf
@@ -203,12 +203,43 @@ set_file(){
                 sed -i 's/4096/65535/' /etc/security/limits.d/20-nproc.conf
             fi
         fi
-        echo -e "${green}完成${plain}"
     fi
     ulimit -SHn 512000
+    if grep -q "^ulimit" /etc/profile;then
+        sed -i '/ulimit -SHn/d' /etc/profile
+        echo -e "\nulimit -SHn 512000" >> /etc/profile
+    else
+        echo -e "\nulimit -SHn 512000" >> /etc/profile
+    fi
+    if ! grep -q "pam_limits.so" /etc/pam.d/common-session;then
+        echo "session required pam_limits.so" >> /etc/pam.d/common-session
+    fi
+    if ! grep -q "pam_limits.so" /etc/pam.d/common-session-noninteractive;then
+        echo "session required pam_limits.so" >> /etc/pam.d/common-session-noninteractive
+    fi
+    if grep -q "^DefaultLimitCORE" /etc/systemd/system.conf;then
+        sed -i '/DefaultLimitCORE/d' /etc/systemd/system.conf
+        echo "DefaultLimitCORE=infinity" >> /etc/systemd/system.conf
+    else
+        echo "DefaultLimitCORE=infinity" >> /etc/systemd/system.conf
+    fi
+    if grep -q "^DefaultLimitNOFILE" /etc/systemd/system.conf;then
+        sed -i '/DefaultLimitNOFILE/d' /etc/systemd/system.conf
+        echo "DefaultLimitNOFILE=512000" >> /etc/systemd/system.conf
+    else
+        echo "DefaultLimitNOFILE=512000" >> /etc/systemd/system.conf
+    fi
+    if grep -q "^DefaultLimitNPROC" /etc/systemd/system.conf;then
+        sed -i '/DefaultLimitNPROC/d' /etc/systemd/system.conf
+        echo "DefaultLimitNPROC=512000" >> /etc/systemd/system.conf
+    else
+        echo "DefaultLimitNPROC=512000" >> /etc/systemd/system.conf
+    fi
+    systemctl daemon-reload
+    echo -e "${green}完成${plain}"
 }
 
-#sysctl.conf设置
+#优化sysctl.conf
 set_sysctl(){
 echo -e "${yellow}优化系统内核参数${plain}"
 sed -i '/net.ipv4.icmp_echo_ignore_broadcasts/d' /etc/sysctl.conf
@@ -322,7 +353,7 @@ EOF
 echo -e "${green}完成${plain}"
 }
 
-#系统熵值优化
+#优化系统熵值
 set_entropy(){
     if [ `cat /proc/sys/kernel/random/entropy_avail` -lt 1000 ]; then
         echo -e "${yellow}优化系统熵值${plain}"
@@ -466,7 +497,7 @@ set_readlines(){
     echo -e "${green}完成${plain}"
 }
 
-#CentoS增加virtio-blk和xen-blkfront外置驱动
+#Centos增加virtio-blk和xen-blkfront外置驱动
 set_drivers(){
     if [[ x"${release}" == x"centos" ]]; then
         echo -e "${yellow}优化外置驱动${plain}"

@@ -2,11 +2,9 @@
     "Debug": false,
     "Retries": 3,
     "ServeNodes": [
-        "tcp://:2000/:6666",
-        "udp://:2000/:6666"
+        "relay+ws://:20000/127.0.0.1:6666"
     ],
     "ChainNodes": [
-        "ws://1.1.1.1:80"
     ],
     "Routes": [
         {

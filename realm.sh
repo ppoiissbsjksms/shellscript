@@ -182,11 +182,11 @@ show_status() {
     check_status
     case $? in
         0)
-            echo -e "Realm状态: ${Green}已运行${Font}"
+            echo -e "Realm状态: ${Green}已运行${Font}  版本: ${Green}$(/opt/realm/realm -v | awk '{print $2}')${Font}"
             show_enable_status
             ;;
         1)
-            echo -e "Realm状态: ${Yellow}未运行${Font}"
+            echo -e "Realm状态: ${Yellow}未运行${Font}  版本: ${Green}$(/opt/realm/realm -v | awk '{print $2}')${Font}"
             show_enable_status
             ;;
         2)
@@ -247,9 +247,9 @@ Install_Realm(){
   read -p "请选择(默认国外): " download
   [[ -z ${download} ]] && download="1"
   if [[ ${download} == [2] ]]; then
-      URL="https://ghproxy.com/https://github.com$(wget -qO- "https://ghproxy.com/https://github.com/zhboner/realm/releases/latest" | grep -E "href=.*realm-x86_64-unknown-linux-musl.tar.gz" | awk -F "\"" '{print $2}')"
+      URL="https://ghproxy.com/https://github.com/zhboner/realm/releases/latest/download/realm-x86_64-unknown-linux-musl.tar.gz"
   elif [[ ${download} == [1] ]]; then
-      URL="$(wget -qO- https://api.github.com/repos/zhboner/realm/releases/latest | grep -E "browser_download_url.*realm-x86_64-unknown-linux-musl.tar.gz" | cut -f4 -d\")"    
+      URL="https://github.com/zhboner/realm/releases/latest/download/realm-x86_64-unknown-linux-musl.tar.gz"    
   else
       print_error "输入错误，请重新输入！"
       before_show_menu
@@ -304,9 +304,9 @@ Update_Realm(){
     read -p "请选择(默认国外): " download
     [[ -z ${download} ]] && download="1"
     if [[ ${download} == [2] ]]; then
-        URL="https://ghproxy.com/https://github.com$(wget -qO- "https://ghproxy.com/https://github.com/zhboner/realm/releases/latest" | grep -E "href=.*realm-x86_64-unknown-linux-musl.tar.gz" | awk -F "\"" '{print $2}')"
+        URL="https://ghproxy.com/https://github.com/zhboner/realm/releases/latest/download/realm-x86_64-unknown-linux-musl.tar.gz"
     elif [[ ${download} == [1] ]]; then
-        URL="$(wget -qO- https://api.github.com/repos/zhboner/realm/releases/latest | grep -E "browser_download_url.*realm-x86_64-unknown-linux-musl.tar.gz" | cut -f4 -d\")"    
+        URL="https://github.com/zhboner/realm/releases/latest/download/realm-x86_64-unknown-linux-musl.tar.gz"    
     else
         print_error "输入错误，请重新输入！"
         before_show_menu
@@ -714,14 +714,14 @@ Edit_Realm(){
 #更新脚本
 Update_Shell(){
     echo -e "当前版本为 [ ${shell_version} ]，开始检测最新版本..."
-    ol_version=$(curl -L -s "https://ghproxy.com/https://github.com/myxuchangbin/shellscript/raw/master/realm.sh" | grep "shell_version=" | head -1 | awk -F '=|"' '{print $3}')
+    ol_version=$(curl -L -s "https://ghproxy.com/https://raw.githubusercontent.com/myxuchangbin/shellscript/master/realm.sh" | grep "shell_version=" | head -1 | awk -F '=|"' '{print $3}')
     if [[ "$shell_version" != "$(echo -e "$shell_version\n$ol_version" | sort -rV | head -1)" ]]; then
         print_ok "存在新版本，是否更新 [Y/N]?"
         read -rp "(默认: y):" update_confirm
         [[ -z "${yn}" ]] && yn="y"
         case $update_confirm in
         [yY][eE][sS] | [yY])
-          wget -N --no-check-certificate https://ghproxy.com/https://github.com/myxuchangbin/shellscript/raw/master/realm.sh && chmod +x realm.sh
+          wget -N --no-check-certificate https://ghproxy.com/https://raw.githubusercontent.com/myxuchangbin/shellscript/master/realm.sh && chmod +x realm.sh
           print_ok "更新完成"
           print_ok "您可以通过 bash $0 执行本程序"
           exit 0

@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 #Remarks: 适用于centos7 debian ubuntu的新系统优化脚本
-#Update: 2022-10-26
-#Warning: 脚本用于个人测试，请谨慎用于生产环境
+#From: https://github.com/myxuchangbin/shellscript
+#Warning: 脚本用于内部测试，请谨慎用于生产环境
 
 red='\033[0;31m'
 green='\033[0;32m'
 yellow='\033[0;33m'
+yellowflash='\033[0;33;5m'
+blackflash='\033[0;47;30;5m'
 plain='\033[0m'
 
 # check root
@@ -110,19 +112,21 @@ set_securite(){
         fi
         sed -i '/SELINUX/s/enforcing/disabled/' /etc/selinux/config && setenforce 0
     echo -e "${green}完成${plain}"
-    #安全提示：脚本输入k参数，会默认添加作者个人公钥到服务器，请谨慎运行！！！
+    #安全提示：脚本输入k参数，会默认添加内部公钥到服务器，请谨慎运行！！！
+    
     if [[ "${import_key}" == "1" ]]; then
-        echo -e "${yellow}检查并添加作者SSH公钥${plain}"
-            [ -e /root/.ssh ] || mkdir -p /root/.ssh
-            [ -e /root/.ssh/authorized_keys ] || touch /root/.ssh/authorized_keys
-            if [ `grep -c "#pkey20220322" /root/.ssh/authorized_keys` -eq 0 ];then
-                wget -O /tmp/id_rsa_1024.pub https://${GITHUB_RAW_URL}/myxuchangbin/shellscript/master/id_rsa_1024.pub
-                if echo "03533eeb543c816baab80ef55330eca9  /tmp/id_rsa_1024.pub" | md5sum -c; then
-                    cat /tmp/id_rsa_1024.pub >> /root/.ssh/authorized_keys
-                    echo -e "\n#pkey20220322" >> /root/.ssh/authorized_keys
-                fi
-                rm -f /tmp/id_rsa_1024.pub
+        echo -e "${yellowflash}脚本正在添加内部ssh公钥到服务器，取消请按Ctrl+C${plain}"
+        sleep 5
+        [ -e /root/.ssh ] || mkdir -p /root/.ssh
+        [ -e /root/.ssh/authorized_keys ] || touch /root/.ssh/authorized_keys
+        if [ `grep -c "#pkey20220322" /root/.ssh/authorized_keys` -eq 0 ];then
+            wget -O /tmp/id_rsa_1024.pub https://${GITHUB_RAW_URL}/myxuchangbin/shellscript/master/id_rsa_1024.pub
+            if echo "03533eeb543c816baab80ef55330eca9  /tmp/id_rsa_1024.pub" | md5sum -c; then
+                cat /tmp/id_rsa_1024.pub >> /root/.ssh/authorized_keys
+                echo -e "\n#pkey20220322" >> /root/.ssh/authorized_keys
             fi
+            rm -f /tmp/id_rsa_1024.pub
+        fi
         echo -e "${green}完成${plain}"
     fi
     echo -e "${yellow}检查系统时区${plain}"
@@ -353,6 +357,31 @@ EOF
 echo -e "${green}完成${plain}"
 }
 
+#检查bbr当前状态
+check_bbr(){
+    kernel_version=$(uname -r | awk -F "-" '{print $1}')
+    if [[ $(echo ${kernel_version} | awk -F'.' '{print $1}') == "4" ]] && [[ $(echo ${kernel_version} | awk -F'.' '{print $2}') -ge 9 ]] || [[ $(echo ${kernel_version} | awk -F'.' '{print $1}') == "5" ]] || [[ $(echo ${kernel_version} | awk -F'.' '{print $1}') == "6" ]]; then
+        kernel_status="BBR"
+    else
+        kernel_status="noinstall"
+    fi
+    if [[ ${kernel_status} == "BBR" ]]; then
+        bbr_run_status=$(cat /proc/sys/net/ipv4/tcp_congestion_control | awk '{print $1}')
+        if [[ ${bbr_run_status} == "bbr" ]]; then
+            bbr_run_status=$(cat /proc/sys/net/ipv4/tcp_congestion_control | awk '{print $1}')
+            if [[ ${bbr_run_status} == "bbr" ]]; then
+                bbr_run_status="${green}开启成功${plain}"
+            else
+                bbr_run_status="${yellow}开启失败${plain}"
+            fi
+        else
+            bbr_run_status="${yellow}未安装加速模块${plain}"
+        fi
+    else
+        bbr_run_status="${yellow}开启失败，请确保当前运行内核版本不低于4.9，当前版本：${kernel_version}${plain}"
+    fi
+}
+
 #优化系统熵值
 set_entropy(){
     if [ `cat /proc/sys/kernel/random/entropy_avail` -lt 1000 ]; then
@@ -527,6 +556,7 @@ main(){
     set_securite
     set_file
     set_sysctl
+    check_bbr
     set_entropy
     set_vimserver
     set_journal
@@ -537,4 +567,5 @@ main(){
 main
 
 rm -f startsys.sh && history -c
-echo -e "修改登录欢迎 \033[47;30;5m vi /etc/profile.d/motd.sh \033[0m  " 
+echo -e "BBR拥塞控制状态：${bbr_run_status}"
+echo -e "优化运行完成，${blackflash}如有问题或更好的建议请反馈${plain}" 

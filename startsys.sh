@@ -558,7 +558,6 @@ main(){
     set_sysctl
     check_bbr
     set_entropy
-    set_vimserver
     set_journal
     set_readlines
     set_drivers

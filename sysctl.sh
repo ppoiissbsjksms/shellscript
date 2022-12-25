@@ -8,7 +8,7 @@ apt install -y vim wget curl lrzsz tar lsof nmap dnsutils nload iperf3 screen cr
 #调整时区
 systime(){
 timedatectl set-timezone Asia/Shanghai
-)
+}
 
 #安装BBR&内核转发
 tcp_tune(){ # 优化TCP窗口

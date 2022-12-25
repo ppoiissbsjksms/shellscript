@@ -559,8 +559,6 @@ main(){
     check_bbr
     set_entropy
     set_journal
-    set_readlines
-    set_drivers
     set_welcome
 }
 main
